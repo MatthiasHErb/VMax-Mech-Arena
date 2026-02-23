@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mech Arena — Kampfroboter</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1 class="logo">MECH ARENA</h1>
+      <div class="credits">
+        <span class="credits-icon">⚡</span>
+        <span id="money">0</span> Credits
+      </div>
+      <nav class="nav">
+        <button class="nav-btn active" data-screen="garage">Garage</button>
+        <button class="nav-btn" data-screen="arena">Arena</button>
+        <button class="nav-btn" data-screen="shop">Shop</button>
+      </nav>
+    </header>
+
+    <main class="main">
+      <!-- GARAGE: Roboter bauen & ansehen -->
+      <section id="garage" class="screen active">
+        <div class="garage-layout">
+          <div class="mech-preview">
+            <div class="mech-silhouette" id="mechPreview">
+              <img src="" alt="Roboter" class="mech-image" id="mechPreviewImage">
+            </div>
+            <p class="mech-name" id="mechName">Dein Roboter</p>
+          </div>
+          <div class="stats-panel">
+            <h2>Stats</h2>
+            <div class="stat-bars">
+              <div class="stat-row">
+                <label>Leben</label>
+                <div class="bar-wrap"><div class="bar hp" id="statHp"></div></div>
+                <span id="hpVal">100</span>
+              </div>
+              <div class="stat-row">
+                <label>Rüstung</label>
+                <div class="bar-wrap"><div class="bar armor" id="statArmor"></div></div>
+                <span id="armorVal">50</span>
+              </div>
+              <div class="stat-row">
+                <label>Schaden</label>
+                <div class="bar-wrap"><div class="bar damage" id="statDamage"></div></div>
+                <span id="damageVal">25</span>
+              </div>
+              <div class="stat-row">
+                <label>Geschwindigkeit</label>
+                <div class="bar-wrap"><div class="bar speed" id="statSpeed"></div></div>
+                <span id="speedVal">10</span>
+              </div>
+            </div>
+            <div class="equipped-parts" id="equippedParts">
+              <p>Ausgerüstet: —</p>
+              <div class="equip-selects" id="equipSelects"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ARENA: Kämpfe -->
+      <section id="arena" class="screen">
+        <div class="arena-top">
+          <div class="fighter-card player-card">
+            <div class="fighter-avatar" id="playerAvatar">MECH</div>
+            <div class="fighter-info">
+              <span class="fighter-name" id="playerName">Du</span>
+              <div class="fighter-hp">
+                <div class="hp-bar"><div class="hp-fill" id="playerHpBar"></div></div>
+                <span id="playerHpText">100 / 100</span>
+              </div>
+            </div>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="fighter-card enemy-card">
+            <div class="fighter-avatar" id="enemyAvatar">?</div>
+            <div class="fighter-info">
+              <span class="fighter-name" id="enemyName">Gegner</span>
+              <div class="fighter-hp">
+                <div class="hp-bar"><div class="hp-fill" id="enemyHpBar"></div></div>
+                <span id="enemyHpText">100 / 100</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="arena-canvas-container">
+          <canvas id="arenaCanvas" width="600" height="400"></canvas>
+          <div class="controls-hint" id="controlsHint">
+            <p><strong>Steuerung:</strong></p>
+            <p>↑↓←→ Bewegung & Drehung</p>
+            <p>Leertaste = Schießen</p>
+          </div>
+        </div>
+        <div class="arena-status" id="arenaStatus">
+          <p>Wähle einen Gegner aus der Liste.</p>
+        </div>
+        <div class="arena-actions">
+          <button class="btn btn-primary" id="btnFight">Kampf starten</button>
+          <button class="btn btn-secondary" id="btnNextOpponent">Nächster Gegner</button>
+        </div>
+        <div class="opponent-select" id="opponentSelect">
+          <h3>Wähle deinen Gegner</h3>
+          <div class="opponent-list" id="opponentList"></div>
+        </div>
+      </section>
+
+      <!-- SHOP: Teile kaufen -->
+      <section id="shop" class="screen">
+        <h2>Teile kaufen</h2>
+        <p class="shop-desc">Verbessere deinen Roboter mit besseren Chassis, Waffen und Rüstung.</p>
+        <div class="shop-grid" id="shopGrid"></div>
+        <div class="owned-parts" id="ownedParts">
+          <h3>Deine Teile (in Garage ausrüsten)</h3>
+          <div class="owned-list" id="ownedList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

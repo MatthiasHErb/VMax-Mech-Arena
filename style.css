@@ -1,0 +1,647 @@
+/* Mech Arena – Kampfroboter-Spiel */
+:root {
+  --bg-dark: #0a0e14;
+  --bg-panel: #121a24;
+  --bg-card: #1a2433;
+  --accent: #00d4aa;
+  --accent-dim: #00a884;
+  --danger: #ff4757;
+  --warning: #ffa502;
+  --text: #e4e8ec;
+  --text-dim: #8a9aaa;
+  --border: #2a3a4a;
+  --glow: rgba(0, 212, 170, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text);
+  min-height: 100vh;
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(0, 212, 170, 0.08) 0%, transparent 50%);
+}
+
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-panel);
+  border-bottom: 2px solid var(--border);
+}
+
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--glow);
+}
+
+.credits {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--warning);
+}
+
+.credits-icon {
+  font-size: 1.2rem;
+}
+
+.nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-card);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  color: var(--text);
+  border-color: var(--accent-dim);
+}
+
+.nav-btn.active {
+  background: var(--accent);
+  color: var(--bg-dark);
+  border-color: var(--accent);
+}
+
+/* Main / Screens */
+.main {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.screen {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Garage */
+.garage-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 600px) {
+  .garage-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mech-preview {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.mech-silhouette {
+  width: 160px;
+  height: 200px;
+  margin: 0 auto 1rem;
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mech-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.mech-part {
+  position: absolute;
+  border-radius: 4px;
+  background: var(--accent-dim);
+  opacity: 0.9;
+}
+
+.mech-part.chassis {
+  width: 80px;
+  height: 100px;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dim) 100%);
+}
+
+.mech-part.weapon-l {
+  width: 24px;
+  height: 60px;
+  left: 10px;
+  bottom: 80px;
+  background: var(--text-dim);
+}
+
+.mech-part.weapon-r {
+  width: 24px;
+  height: 60px;
+  right: 10px;
+  bottom: 80px;
+  background: var(--text-dim);
+}
+
+.mech-part.armor {
+  width: 90px;
+  height: 30px;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--border);
+}
+
+.mech-name {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.stats-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.stats-panel h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--text-dim);
+}
+
+.stat-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 50px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-row label {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.bar-wrap {
+  height: 12px;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.bar.hp { background: var(--danger); }
+.bar.armor { background: var(--text-dim); }
+.bar.damage { background: var(--warning); }
+.bar.speed { background: var(--accent); }
+
+.equipped-parts {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.equipped-parts p {
+  margin-bottom: 0.25rem;
+}
+
+/* Arena */
+.arena-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.fighter-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 200px;
+}
+
+.fighter-card.player-card { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,212,170,0.2); }
+.fighter-card.enemy-card { border-color: var(--danger); box-shadow: 0 0 20px rgba(255,71,87,0.2); }
+
+.fighter-avatar {
+  width: 56px;
+  height: 56px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+.enemy-card .fighter-avatar { color: var(--danger); }
+
+.fighter-info {
+  flex: 1;
+}
+
+.fighter-name {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.fighter-hp .hp-bar {
+  height: 8px;
+  background: var(--bg-dark);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.fighter-hp .hp-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+.enemy-card .fighter-hp .hp-fill { background: var(--danger); }
+
+.fighter-hp span {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.vs-badge {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: var(--text-dim);
+}
+
+.arena-canvas-container {
+  position: relative;
+  margin-bottom: 1rem;
+  background: #ffffff;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#arenaCanvas {
+  display: block;
+  background: #ffffff;
+  cursor: crosshair;
+  outline: none;
+}
+
+.controls-hint {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: rgba(18, 26, 36, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.controls-hint.hidden {
+  display: none;
+}
+
+.controls-hint p {
+  margin: 0.25rem 0;
+}
+
+.controls-hint strong {
+  color: var(--accent);
+}
+
+.arena-status {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+}
+
+.arena-status p {
+  margin: 0;
+}
+
+.arena-status strong {
+  color: var(--accent);
+}
+
+.arena-status .win {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.arena-status .lose {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.arena-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.opponent-select {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.opponent-select h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  color: var(--text-dim);
+}
+
+.opponent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.opponent-btn {
+  font-family: 'Rajdhani', sans-serif;
+  padding: 0.6rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.opponent-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.opponent-btn .power { font-size: 0.8rem; color: var(--text-dim); }
+
+/* Buttons */
+.btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg-dark);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-dim);
+  box-shadow: 0 0 20px var(--glow);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Shop */
+.shop-desc {
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.shop-item {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  transition: border-color 0.2s;
+}
+
+.shop-item:hover {
+  border-color: var(--accent-dim);
+}
+
+.shop-item h4 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.shop-item .slot {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+
+.shop-item .stats {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.shop-item .price {
+  font-weight: 700;
+  color: var(--warning);
+  margin-bottom: 0.5rem;
+}
+
+.shop-item button {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+}
+
+.shop-item button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.shop-item button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.owned-parts h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-dim);
+}
+
+.owned-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.owned-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.owned-tag .equip-btn {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  background: var(--accent);
+  color: var(--bg-dark);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.owned-tag .equip-btn:hover {
+  background: var(--accent-dim);
+}
+
+.owned-tag.equipped {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Garage: Part auswählen zum Ausrüsten */
+.equip-select {
+  margin-top: 0.5rem;
+}
+
+.equip-select select {
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.equip-select select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
