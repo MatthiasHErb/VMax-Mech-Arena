@@ -467,12 +467,64 @@ function initGarageRobotImage() {
 }
 
 function initCanvas() {
-  canvas = document.getElementById('arenaCanvas');
+  canvas = document.getElementById('fightCanvas');
   if (!canvas) return;
   ctx = canvas.getContext('2d');
-  canvas.width = 600;
-  canvas.height = 400;
+  resizeFightCanvas();
   if (!robotImage) loadRobotImage();
+}
+
+function resizeFightCanvas() {
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function showFightOverlay() {
+  const overlay = document.getElementById('fightOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+  resizeFightCanvas();
+}
+
+function hideFightOverlay() {
+  const overlay = document.getElementById('fightOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function updateHud() {
+  const p = gameState.player;
+  const e = gameState.enemy;
+  if (p) {
+    const bar = document.getElementById('hudPlayerHp');
+    const text = document.getElementById('hudPlayerHpText');
+    if (bar) bar.style.width = `${(Math.max(0, p.hp) / p.maxHp) * 100}%`;
+    if (text) text.textContent = `${Math.max(0, Math.round(p.hp))} / ${p.maxHp}`;
+  }
+  if (e) {
+    const bar = document.getElementById('hudEnemyHp');
+    const text = document.getElementById('hudEnemyHpText');
+    const label = document.getElementById('hudEnemyLabel');
+    if (bar) bar.style.width = `${(Math.max(0, e.hp) / e.maxHp) * 100}%`;
+    if (text) text.textContent = `${Math.max(0, Math.round(e.hp))} / ${e.maxHp}`;
+    if (label && state.currentEnemy) label.textContent = state.currentEnemy.name;
+  }
+}
+
+function exitFight() {
+  state.fightInProgress = false;
+  gameState.fightEnded = false;
+  gameState.winner = null;
+  if (gameState.animationId) {
+    cancelAnimationFrame(gameState.animationId);
+    gameState.animationId = null;
+  }
+  document.removeEventListener('keydown', handleKeyDown);
+  document.removeEventListener('keyup', handleKeyUp);
+  window.removeEventListener('resize', resizeFightCanvas);
+  hideFightOverlay();
+  document.getElementById('btnNextOpponent').disabled = false;
+  document.getElementById('btnFight').disabled = false;
+  document.getElementById('controlsHint').classList.add('hidden');
 }
 
 function drawMech(x, y, angle, color, size = 20) {
@@ -1064,13 +1116,14 @@ function gameLoop() {
   
   updateProjectiles();
   
-  // HP-Anzeigen oben kontinuierlich aktualisieren
+  // HP-Anzeigen aktualisieren (Arena-Seite + Vollbild-HUD)
   if (gameState.player && !gameState.fightEnded) {
     updatePlayerHp(gameState.player.hp, gameState.player.maxHp);
   }
   if (gameState.enemy && !gameState.fightEnded) {
     updateEnemyHp(gameState.enemy.hp, gameState.enemy.maxHp);
   }
+  updateHud();
   
   render();
   
@@ -1095,43 +1148,25 @@ function endFight(won) {
   gameState.fightEnded = true;
   gameState.winner = won ? 'player' : 'enemy';
   
-  // Nach 3 Sekunden den Kampf beenden
+  // Credits sofort gutschreiben
+  if (won) {
+    state.money += state.currentEnemy.reward;
+    updateMoney();
+  }
+  
+  // Nach 3 Sekunden Vollbild verlassen
   setTimeout(() => {
-    state.fightInProgress = false;
-    gameState.fightEnded = false;
-    gameState.winner = null;
+    exitFight();
     
-    if (gameState.animationId) {
-      cancelAnimationFrame(gameState.animationId);
-      gameState.animationId = null;
-    }
-    
-    document.getElementById('btnNextOpponent').disabled = false;
-    document.getElementById('btnFight').disabled = false;
-    document.getElementById('controlsHint').classList.add('hidden');
-    
-    // Tastatur-Events entfernen
-    document.removeEventListener('keydown', handleKeyDown);
-    document.removeEventListener('keyup', handleKeyUp);
-    
+    const arenaStatusEl = document.getElementById('arenaStatus');
     if (won) {
-      state.money += state.currentEnemy.reward;
-      updateMoney();
-      const arenaStatusEl = document.getElementById('arenaStatus');
       if (arenaStatusEl) {
         arenaStatusEl.innerHTML = `<p class="win">Sieg! Du erhältst <strong>${state.currentEnemy.reward} Credits</strong>.</p>`;
       }
     } else {
-      const arenaStatusEl = document.getElementById('arenaStatus');
       if (arenaStatusEl) {
         arenaStatusEl.innerHTML = '<p class="lose">Niederlage. Verbessere deinen Mech in der Garage und im Shop.</p>';
       }
-    }
-    
-    // Canvas leeren
-    if (ctx) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
   }, 3000);
 }
@@ -1144,6 +1179,10 @@ function handleKeyDown(e) {
   if (e.key === ' ') {
     e.preventDefault();
     gameState.keys[' '] = true;
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    exitFight();
   }
 }
 
@@ -1158,18 +1197,21 @@ function handleKeyUp(e) {
 
 function fight() {
   if (state.fightInProgress || !state.currentEnemy) return;
-  if (!canvas || !ctx) {
-    initCanvas();
-  }
+  
+  // Vollbild-Overlay anzeigen
+  showFightOverlay();
+  initCanvas();
   
   state.fightInProgress = true;
   gameState.fightEnded = false;
   gameState.winner = null;
   document.getElementById('btnFight').disabled = true;
   document.getElementById('btnNextOpponent').disabled = true;
-  document.getElementById('controlsHint').classList.remove('hidden');
   
-  // Canvas fokussieren für bessere Steuerung
+  // Fenster-Resize beobachten
+  window.addEventListener('resize', resizeFightCanvas);
+  
+  // Canvas fokussieren
   canvas.focus();
   
   const playerStats = computeRobotStats();

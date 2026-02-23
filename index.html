@@ -124,6 +124,33 @@
       </section>
     </main>
   </div>
+
+  <!-- VOLLBILD-KAMPF-OVERLAY -->
+  <div id="fightOverlay" class="fight-overlay hidden">
+    <div class="fight-hud">
+      <div class="fight-hud-left">
+        <span class="hud-label">DU</span>
+        <div class="hud-hp-bar"><div class="hud-hp-fill player-hp" id="hudPlayerHp"></div></div>
+        <span class="hud-hp-text" id="hudPlayerHpText">100/100</span>
+      </div>
+      <div class="fight-hud-center">
+        <span class="hud-esc">ESC = Zurück</span>
+      </div>
+      <div class="fight-hud-right">
+        <span class="hud-label enemy-label" id="hudEnemyLabel">GEGNER</span>
+        <div class="hud-hp-bar"><div class="hud-hp-fill enemy-hp" id="hudEnemyHp"></div></div>
+        <span class="hud-hp-text" id="hudEnemyHpText">100/100</span>
+      </div>
+    </div>
+    <canvas id="fightCanvas"></canvas>
+    <div class="controls-hint fight-controls" id="fightControlsHint">
+      <p><strong>Steuerung:</strong></p>
+      <p>↑↓←→ Bewegung & Drehung</p>
+      <p>Leertaste = Schießen</p>
+      <p>ESC = Zurück</p>
+    </div>
+  </div>
+
   <script src="game.js"></script>
 </body>
 </html>

@@ -645,3 +645,134 @@ body {
   outline: none;
   border-color: var(--accent);
 }
+
+/* Vollbild-Kampf-Overlay */
+.fight-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.fight-overlay.hidden {
+  display: none;
+}
+
+.fight-overlay canvas {
+  display: block;
+  background: #ffffff;
+  cursor: crosshair;
+  outline: none;
+}
+
+.fight-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10;
+}
+
+.fight-hud-left,
+.fight-hud-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.fight-hud-right {
+  justify-content: flex-end;
+}
+
+.fight-hud-center {
+  flex-shrink: 0;
+  padding: 0 1rem;
+}
+
+.hud-label {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+  min-width: 80px;
+}
+
+.hud-label.enemy-label {
+  color: var(--danger);
+  text-align: right;
+}
+
+.hud-hp-bar {
+  width: 200px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.hud-hp-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.15s ease;
+}
+
+.hud-hp-fill.player-hp {
+  background: var(--accent);
+}
+
+.hud-hp-fill.enemy-hp {
+  background: var(--danger);
+}
+
+.hud-hp-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ccc;
+  min-width: 70px;
+}
+
+.fight-hud-right .hud-hp-text {
+  text-align: right;
+}
+
+.hud-esc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  color: #666;
+  letter-spacing: 0.1em;
+}
+
+.fight-controls {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.8rem;
+  color: #999;
+  pointer-events: none;
+}
+
+.fight-controls.hidden {
+  display: none;
+}
+
+.fight-controls strong {
+  color: var(--accent);
+}
