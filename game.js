@@ -216,6 +216,12 @@ function renderGarage() {
       renderGarage();
     });
   });
+
+  // Garage-Canvas: Seitenansicht mit Layern rendern
+  const garageCanvas = document.getElementById('garageCanvas');
+  if (garageCanvas && typeof drawGaragePreview === 'function') {
+    drawGaragePreview(garageCanvas);
+  }
 }
 
 // —— SHOP
@@ -410,7 +416,6 @@ function renderArena() {
 
 // —— ECHTZEIT-KAMPF-SYSTEM
 let canvas, ctx;
-let robotImage = null; // rebel2-Bild für Arena
 
 let gameState = {
   player: null,
@@ -427,51 +432,11 @@ let gameState = {
   winner: null,
 };
 
-function loadRobotImage() {
-  const extensions = ['png', 'jpg', 'jpeg', 'webp'];
-  let tried = 0;
-  function tryLoad() {
-    if (tried >= extensions.length) return;
-    const ext = extensions[tried++];
-    const img = new Image();
-    img.onload = function() {
-      robotImage = img;
-      console.log('Roboter-Bild rebel2.' + ext + ' geladen');
-      const garageImg = document.getElementById('mechPreviewImage');
-      if (garageImg) garageImg.src = 'rebel2.' + ext;
-    };
-    img.onerror = function() {
-      tryLoad();
-    };
-    img.src = 'rebel2.' + ext;
-  }
-  tryLoad();
-}
-
-function initGarageRobotImage() {
-  const garageImg = document.getElementById('mechPreviewImage');
-  if (!garageImg) return;
-  const extensions = ['png', 'jpg', 'jpeg', 'webp'];
-  let tried = 0;
-  function tryNext() {
-    if (tried >= extensions.length) return;
-    const ext = extensions[tried++];
-    const testImg = new Image();
-    testImg.onload = function() {
-      garageImg.src = 'rebel2.' + ext;
-    };
-    testImg.onerror = tryNext;
-    testImg.src = 'rebel2.' + ext;
-  }
-  tryNext();
-}
-
 function initCanvas() {
   canvas = document.getElementById('fightCanvas');
   if (!canvas) return;
   ctx = canvas.getContext('2d');
   resizeFightCanvas();
-  if (!robotImage) loadRobotImage();
 }
 
 function resizeFightCanvas() {
@@ -527,17 +492,15 @@ function exitFight() {
   document.getElementById('controlsHint').classList.add('hidden');
 }
 
-function drawMech(x, y, angle, color, size = 20) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-
-  if (robotImage && robotImage.complete && robotImage.naturalWidth > 0) {
-    const w = size * 2.4;
-    const h = size * 2.2;
-    ctx.drawImage(robotImage, -w / 2, -h / 2, w, h);
+function drawMech(x, y, angle, color, size = 20, isPlayer = false, enemyIndex = 0) {
+  if (isPlayer && typeof drawPlayerMechLayered === 'function') {
+    drawPlayerMechLayered(ctx, x, y, angle, size);
+  } else if (!isPlayer && typeof drawEnemyMechSprite === 'function' && enemySprites.length > 0) {
+    drawEnemyMechSprite(ctx, x, y, angle, size, enemyIndex);
   } else {
-    // Fallback: geometrische Form
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
     ctx.fillStyle = color;
     ctx.fillRect(-size * 0.6, -size * 0.4, size * 1.2, size * 0.8);
     ctx.fillRect(-size * 0.8, -size * 0.3, size * 0.3, size * 0.6);
@@ -548,9 +511,8 @@ function drawMech(x, y, angle, color, size = 20) {
     ctx.lineTo(size * 0.3, size * 0.2);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
   }
-
-  ctx.restore();
 }
 
 function drawProjectile(proj) {
@@ -1082,13 +1044,13 @@ function render() {
   
   // Gegner
   if (gameState.enemy) {
-    drawMech(gameState.enemy.x, gameState.enemy.y, gameState.enemy.angle, '#ff4757', 14);
+    drawMech(gameState.enemy.x, gameState.enemy.y, gameState.enemy.angle, '#ff4757', 14, false, gameState.enemy.spriteIndex || 0);
     drawHpBar(gameState.enemy.x, gameState.enemy.y, gameState.enemy.hp, gameState.enemy.maxHp, '#ff4757', 14);
   }
   
   // Spieler
   if (gameState.player) {
-    drawMech(gameState.player.x, gameState.player.y, gameState.player.angle, '#00d4aa', 14);
+    drawMech(gameState.player.x, gameState.player.y, gameState.player.angle, '#00d4aa', 14, true);
     drawHpBar(gameState.player.x, gameState.player.y, gameState.player.hp, gameState.player.maxHp, '#00d4aa', 14);
   }
 }
@@ -1239,6 +1201,7 @@ function fight() {
     speed: state.currentEnemy.speed,
     vx: 0,
     vy: 0,
+    spriteIndex: Math.floor(Math.random() * 3),
   };
   
   gameState.projectiles = [];
@@ -1305,8 +1268,9 @@ function initArena() {
 // —— Start
 function init() {
   try {
-    loadRobotImage();
-    initGarageRobotImage();
+    if (typeof initPartSprites === 'function') {
+      initPartSprites();
+    }
     initCanvas();
     updateMoney();
     renderGarage();

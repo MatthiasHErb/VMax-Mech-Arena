@@ -30,7 +30,7 @@
         <div class="garage-layout">
           <div class="mech-preview">
             <div class="mech-silhouette" id="mechPreview">
-              <img src="" alt="Roboter" class="mech-image" id="mechPreviewImage">
+              <canvas id="garageCanvas" width="160" height="200"></canvas>
             </div>
             <p class="mech-name" id="mechName">Dein Roboter</p>
           </div>
@@ -144,13 +144,11 @@
     </div>
     <canvas id="fightCanvas"></canvas>
     <div class="controls-hint fight-controls" id="fightControlsHint">
-      <p><strong>Steuerung:</strong></p>
-      <p>↑↓←→ Bewegung & Drehung</p>
-      <p>Leertaste = Schießen</p>
-      <p>ESC = Zurück</p>
+      <p>↑↓←→ Bewegen · Leertaste Schießen · ESC Zurück</p>
     </div>
   </div>
 
+  <script src="parts-renderer.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
