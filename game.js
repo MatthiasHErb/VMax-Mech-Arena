@@ -4,43 +4,141 @@
 
 // —— Teile-Katalog (Slot: chassis | weapon | armor)
 const PARTS_CATALOG = [
-  { id: 'chassis_scout', name: 'Scout-Chassis', slot: 'chassis', hp: 80, armor: 20, damage: 0, speed: 14, price: 0 },
-  { id: 'chassis_tank', name: 'Panzer-Chassis', slot: 'chassis', hp: 140, armor: 60, damage: 0, speed: 6, price: 800 },
-  { id: 'chassis_balanced', name: 'Balanced-Chassis', slot: 'chassis', hp: 110, armor: 40, damage: 0, speed: 10, price: 500 },
+  { id: 'chassis_scout', name: 'Scout-Chassis', slot: 'chassis', hp: 80, armor: 40, damage: 0, speed: 14, price: 0 },
+  { id: 'chassis_tank', name: 'Panzer-Chassis', slot: 'chassis', hp: 140, armor: 120, damage: 0, speed: 6, price: 800 },
+  { id: 'chassis_balanced', name: 'Balanced-Chassis', slot: 'chassis', hp: 110, armor: 80, damage: 0, speed: 10, price: 500 },
   { id: 'weapon_cannon', name: 'Leichte Kanone', slot: 'weapon', hp: 0, armor: 0, damage: 28, speed: 0, price: 0 },
   { id: 'weapon_plasma', name: 'Plasma-Werfer', slot: 'weapon', hp: 0, armor: 0, damage: 42, speed: 0, price: 600 },
-  { id: 'weapon_railgun', name: 'Railgun', slot: 'weapon', hp: 0, armor: 0, damage: 55, speed: -1, price: 1200 },
+  { id: 'weapon_railgun', name: 'Railgun', slot: 'weapon', hp: 0, armor: 0, damage: 72, speed: -1, price: 1200 },
   { id: 'weapon_minigun', name: 'Minigun', slot: 'weapon', hp: 0, armor: 0, damage: 38, speed: 1, price: 400 },
-  { id: 'armor_light', name: 'Leichtpanzerung', slot: 'armor', hp: 0, armor: 25, damage: 0, speed: 2, price: 0 },
-  { id: 'armor_heavy', name: 'Schwerpanzerung', slot: 'armor', hp: 20, armor: 55, damage: 0, speed: -3, price: 700 },
-  { id: 'armor_reactive', name: 'Reaktivpanzerung', slot: 'armor', hp: 10, armor: 45, damage: 0, speed: 0, price: 500 },
+  { id: 'armor_light', name: 'Leichtpanzerung', slot: 'armor', hp: 0, armor: 50, damage: 0, speed: 2, price: 0 },
+  { id: 'armor_heavy', name: 'Schwerpanzerung', slot: 'armor', hp: 20, armor: 110, damage: 0, speed: -3, price: 700 },
+  { id: 'armor_reactive', name: 'Reaktivpanzerung', slot: 'armor', hp: 10, armor: 90, damage: 0, speed: 0, price: 500 },
 ];
 
+// —— Waffen-Upgrades: Schüsse pro Salve (1–3)
+const WEAPON_UPGRADE_PRICE = 250;
+const MAX_SHOTS_PER_GUN = 3;
+
 // —— Spieler-Stand
-const state = {
-  money: 500,
+const INITIAL_STATE = {
+  money: 1000,
   ownedPartIds: ['chassis_scout', 'weapon_cannon', 'armor_light'],
-  equipped: {
-    chassis: 'chassis_scout',
-    weaponL: 'weapon_cannon',
-    weaponR: 'weapon_cannon',
-    armor: 'armor_light',
-  },
+  weaponShots: { weapon_cannon: 1, weapon_plasma: 1, weapon_railgun: 1, weapon_minigun: 1 },
+  robots: [
+    { name: 'Mech 1', equipped: { chassis: 'chassis_scout', weaponL: 'weapon_cannon', weaponR: 'weapon_cannon', armor: 'armor_light' } },
+  ],
+  activeRobotIndex: 0,
   currentEnemy: null,
+  currentEnemies: null,
+  arenaMode: '1v1',
   fightInProgress: false,
+  lives: 3,
+  score: 0,
 };
+
+const state = Object.assign({}, INITIAL_STATE, {
+  ownedPartIds: [...INITIAL_STATE.ownedPartIds],
+  weaponShots: { ...INITIAL_STATE.weaponShots },
+  robots: INITIAL_STATE.robots.map((r) => ({ name: r.name, equipped: Object.assign({}, r.equipped) })),
+  activeRobotIndex: 0,
+});
+
+function getWeaponShots(weaponId) {
+  return Math.min(MAX_SHOTS_PER_GUN, Math.max(1, state.weaponShots?.[weaponId] ?? 1));
+}
+
+// —— Hintergrundmusik (variiert, Kampf immer „Neon Parasite Protocol“)
+const MUSIC_COMBAT_TRACK = 'Neon Parasite Protocol.mp3';
+const MUSIC_MENU_TRACKS = [
+  'MechTech.mp3',
+  'Pixel Rush (1).mp3',
+  'Starlight Drive (1).mp3',
+  'Starlight Drive.mp3',
+];
+let currentMusic = null;
+let musicStarted = false;
+
+function getRandomMenuTrack() {
+  if (MUSIC_MENU_TRACKS.length === 0) return 'MechTech.mp3';
+  return MUSIC_MENU_TRACKS[Math.floor(Math.random() * MUSIC_MENU_TRACKS.length)];
+}
+
+function playTrack(filename, loop = false) {
+  if (currentMusic) {
+    currentMusic.pause();
+    currentMusic.currentTime = 0;
+  }
+  currentMusic = new Audio(filename);
+  currentMusic.loop = loop;
+  currentMusic.volume = 0.3;
+  currentMusic.play().catch(() => {});
+  if (!loop) {
+    currentMusic.onended = () => playTrack(getRandomMenuTrack(), false);
+  }
+}
+
+function playCombatMusic() {
+  if (currentMusic) {
+    currentMusic.pause();
+    currentMusic.currentTime = 0;
+  }
+  currentMusic = new Audio(MUSIC_COMBAT_TRACK);
+  currentMusic.loop = true;
+  currentMusic.volume = 0.3;
+  currentMusic.play().catch(() => {});
+}
+
+function playMenuMusic() {
+  playTrack(getRandomMenuTrack(), false);
+}
+
+function startMusic() {
+  if (musicStarted) return;
+  playMenuMusic();
+  musicStarted = true;
+  document.removeEventListener('click', startMusic);
+  document.removeEventListener('keydown', startMusic);
+}
+
+document.addEventListener('click', startMusic, true);
+document.addEventListener('keydown', startMusic, true);
+
+// —— Schuss-Sound (Web Audio API, keine Datei nötig)
+let audioCtx = null;
+function playShotSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.06);
+  } catch (_) {}
+}
 
 // —— Hilfsfunktionen
 function getPart(id) {
   return PARTS_CATALOG.find((p) => p.id === id) || null;
 }
 
+function getEquipped() {
+  return state.robots[state.activeRobotIndex]?.equipped || state.robots[0].equipped;
+}
+
 function getEquippedParts() {
+  const eq = getEquipped();
   return {
-    chassis: getPart(state.equipped.chassis),
-    weaponL: getPart(state.equipped.weaponL),
-    weaponR: getPart(state.equipped.weaponR),
-    armor: getPart(state.equipped.armor),
+    chassis: getPart(eq.chassis),
+    weaponL: getPart(eq.weaponL),
+    weaponR: getPart(eq.weaponR),
+    armor: getPart(eq.armor),
   };
 }
 
@@ -63,10 +161,20 @@ function getPowerLevel(stats) {
   return stats.hp + stats.armor * 2 + stats.damage * 3 + stats.speed * 4;
 }
 
-// —— UI: Geld
+// —— UI: Geld, Leben, Punkte
 function updateMoney() {
   const el = document.getElementById('money');
   if (el) el.textContent = state.money;
+}
+
+function updateLivesDisplay() {
+  const el = document.getElementById('livesDisplay');
+  if (el) el.textContent = '❤'.repeat(state.lives) + '🖤'.repeat(3 - state.lives);
+}
+
+function updateScoreDisplay() {
+  const el = document.getElementById('scoreDisplay');
+  if (el) el.textContent = state.score;
 }
 
 // —— Navigation
@@ -165,7 +273,7 @@ function initNavigation() {
 function renderGarage() {
   const stats = computeRobotStats();
   const maxHp = 200;
-  const maxArmor = 100;
+  const maxArmor = 200;
   const maxDamage = 80;
   const maxSpeed = 20;
 
@@ -197,7 +305,7 @@ function renderGarage() {
   ];
   let selectHtml = '';
   slots.forEach(({ key, label, partIds }) => {
-    const current = state.equipped[key];
+    const current = getEquipped()[key];
     selectHtml += `<div class="equip-select"><label>${label}: </label><select data-slot="${key}">`;
     partIds.forEach((id) => {
       const p = getPart(id);
@@ -208,11 +316,25 @@ function renderGarage() {
     selectHtml += '</select></div>';
   });
 
-  equippedEl.innerHTML = '<p><strong>Ausgerüstet:</strong></p>' + names.map((n) => `<p>• ${n}</p>`).join('') + '<div class="equip-selects" id="equipSelects">' + selectHtml + '</div>';
+  let robotSelectHtml = '';
+  if (state.robots.length > 1) {
+    robotSelectHtml = '<div class="robot-select"><label>Aktiver Roboter: </label><select id="robotSelect">';
+    state.robots.forEach((r, i) => {
+      const sel = state.activeRobotIndex === i ? ' selected' : '';
+      robotSelectHtml += `<option value="${i}"${sel}>${r.name}</option>`;
+    });
+    robotSelectHtml += '</select></div>';
+  }
+  equippedEl.innerHTML = robotSelectHtml + '<p><strong>Ausgerüstet:</strong></p>' + names.map((n) => `<p>• ${n}</p>`).join('') + '<div class="equip-selects" id="equipSelects">' + selectHtml + '</div>';
+
+  document.getElementById('robotSelect')?.addEventListener('change', (e) => {
+    state.activeRobotIndex = parseInt(e.target.value, 10);
+    renderGarage();
+  });
 
   document.getElementById('equipSelects')?.querySelectorAll('select').forEach((sel) => {
     sel.addEventListener('change', (e) => {
-      state.equipped[e.target.dataset.slot] = e.target.value;
+      getEquipped()[e.target.dataset.slot] = e.target.value;
       renderGarage();
     });
   });
@@ -266,17 +388,72 @@ function renderShop() {
     grid.appendChild(div);
   });
 
+  // Waffen-Upgrades: Schüsse pro Salve erhöhen (max 3)
+  const weaponIds = ['weapon_cannon', 'weapon_plasma', 'weapon_railgun', 'weapon_minigun'];
+  weaponIds.forEach((weaponId) => {
+    if (!state.ownedPartIds.includes(weaponId)) return;
+    const part = getPart(weaponId);
+    if (!part) return;
+    const current = getWeaponShots(weaponId);
+    const canUpgrade = current < MAX_SHOTS_PER_GUN && state.money >= WEAPON_UPGRADE_PRICE;
+    const upgradeDiv = document.createElement('div');
+    upgradeDiv.className = 'shop-item shop-item-upgrade';
+    upgradeDiv.innerHTML = `
+      <h4>${part.name} – Salven-Upgrade</h4>
+      <p class="slot">Schüsse pro Salve: ${current} → ${Math.min(MAX_SHOTS_PER_GUN, current + 1)}</p>
+      <p class="stats">Max. ${MAX_SHOTS_PER_GUN} Schüsse gleichzeitig pro Waffe</p>
+      <p class="price">${WEAPON_UPGRADE_PRICE} Credits</p>
+      <button ${!canUpgrade ? 'disabled' : ''}>${current >= MAX_SHOTS_PER_GUN ? 'Max. erreicht' : !canUpgrade ? 'Zu wenig Credits' : 'Upgrade kaufen'}</button>
+    `;
+    const upgradeBtn = upgradeDiv.querySelector('button');
+    if (canUpgrade) {
+      upgradeBtn.addEventListener('click', () => {
+        state.money -= WEAPON_UPGRADE_PRICE;
+        state.weaponShots[weaponId] = (state.weaponShots[weaponId] ?? 1) + 1;
+        updateMoney();
+        renderShop();
+      });
+    }
+    grid.appendChild(upgradeDiv);
+  });
+
+  // Kampfroboter kaufen (10.000 Credits)
+  const robotPrice = 10000;
+  const canBuyRobot = state.money >= robotPrice && state.robots.length < 5;
+  const robotDiv = document.createElement('div');
+  robotDiv.className = 'shop-item shop-item-robot';
+  robotDiv.innerHTML = `
+    <h4>Neuer Kampfroboter</h4>
+    <p class="slot">Zusätzlicher Mech-Slot</p>
+    <p class="stats">Ein zweiter Roboter mit Standard-Ausrüstung (Scout-Chassis, Leichte Kanone, Leichtpanzerung)</p>
+    <p class="price">${robotPrice} Credits</p>
+    <button ${!canBuyRobot ? 'disabled' : ''}>${state.money < robotPrice ? 'Zu wenig Credits' : state.robots.length >= 5 ? 'Max. erreicht' : 'Kaufen'}</button>
+  `;
+  const robotBtn = robotDiv.querySelector('button');
+  if (canBuyRobot) {
+    robotBtn.addEventListener('click', () => {
+      state.money -= robotPrice;
+      state.robots.push({
+        name: `Mech ${state.robots.length + 1}`,
+        equipped: { chassis: 'chassis_scout', weaponL: 'weapon_cannon', weaponR: 'weapon_cannon', armor: 'armor_light' },
+      });
+      state.ownedPartIds.push('chassis_scout', 'weapon_cannon', 'weapon_cannon', 'armor_light');
+      updateMoney();
+      renderShop();
+      renderGarage();
+    });
+  }
+  grid.appendChild(robotDiv);
+
   const ownedList = document.getElementById('ownedList');
   if (ownedList) {
     ownedList.innerHTML = '';
     state.ownedPartIds.forEach((id) => {
       const p = getPart(id);
       if (!p) return;
-      const isEquipped =
-        state.equipped.chassis === id ||
-        state.equipped.weaponL === id ||
-        state.equipped.weaponR === id ||
-        state.equipped.armor === id;
+      const isEquipped = state.robots.some(
+        (r) => r.equipped.chassis === id || r.equipped.weaponL === id || r.equipped.weaponR === id || r.equipped.armor === id
+      );
       const tag = document.createElement('span');
       tag.className = 'owned-tag' + (isEquipped ? ' equipped' : '');
       tag.textContent = p.name + (isEquipped ? ' (ausgerüstet)' : '');
@@ -296,10 +473,12 @@ function generateOpponents() {
     const powerVariation = (i - 2) * 12 + Math.floor(Math.random() * 20);
     const power = Math.max(40, myPower * 0.85 + powerVariation); // 85% der Spieler-Power
     const hp = 50 + (power * 0.3) + Math.floor(Math.random() * 30); // Mehr HP
-    const armor = 15 + (power * 0.12) + Math.floor(Math.random() * 20); // Mehr Rüstung
-    const damage = 15 + (power * 0.15) + Math.floor(Math.random() * 15); // Mehr Schaden
-    const speed = 4 + Math.floor(Math.random() * 6); // Etwas schneller
+    const armor = 2 * (15 + (power * 0.12) + Math.floor(Math.random() * 20));
+    const damage = 15 + (power * 0.15) + Math.floor(Math.random() * 15);
+    const speed = Math.round((4 + Math.floor(Math.random() * 6)) * 1.2);
     const reward = 70 + power + Math.floor(Math.random() * 50);
+    const weaponIds = ['weapon_cannon', 'weapon_plasma', 'weapon_railgun', 'weapon_minigun'];
+    const weaponId = weaponIds[Math.floor(Math.random() * weaponIds.length)];
     list.push({
       name: names[Math.floor(Math.random() * names.length)] + ' #' + (i + 1),
       hp: Math.round(hp),
@@ -308,6 +487,7 @@ function generateOpponents() {
       speed,
       reward,
       power: Math.round(getPowerLevel({ hp, armor, damage, speed })),
+      weaponId,
     });
   }
   return list;
@@ -315,16 +495,36 @@ function generateOpponents() {
 
 function renderArena() {
   try {
-    const opponents = generateOpponents();
     const listEl = document.getElementById('opponentList');
+    const opponentSelect = document.getElementById('opponentSelect');
+    const mode1v1 = document.getElementById('mode1v1');
+    const mode1v3 = document.getElementById('mode1v3');
+    const btnFight = document.getElementById('btnFight');
+
+    if (mode1v1 && mode1v3) {
+      mode1v1.classList.toggle('active', state.arenaMode === '1v1');
+      mode1v3.classList.toggle('active', state.arenaMode === '1v3');
+      mode1v1.onclick = () => { state.arenaMode = '1v1'; renderArena(); };
+      mode1v3.onclick = () => { state.arenaMode = '1v3'; renderArena(); };
+    }
+
+    if (state.arenaMode === '1v3') {
+      if (opponentSelect) opponentSelect.style.display = 'none';
+      if (btnFight) btnFight.disabled = false;
+      const arenaStatusEl = document.getElementById('arenaStatus');
+      if (arenaStatusEl) arenaStatusEl.innerHTML = '<p>1 vs 3 — Kampf gegen 3 Gegner. Klicke "Kampf starten".</p>';
+    } else {
+      if (opponentSelect) opponentSelect.style.display = 'block';
+    }
+
+    const opponents = generateOpponents();
     if (!listEl) {
       console.error('opponentList element not found!');
       return;
     }
     listEl.innerHTML = '';
 
-    console.log(`Rendering ${opponents.length} opponents`);
-
+    if (state.arenaMode === '1v1') {
     opponents.forEach((opp, index) => {
       const btn = document.createElement('button');
       btn.className = 'opponent-btn';
@@ -380,6 +580,7 @@ function renderArena() {
       listEl.appendChild(btn);
       console.log(`Added opponent button ${index + 1}`);
     });
+    }
 
     const stats = computeRobotStats();
     const playerNameEl = document.getElementById('playerName');
@@ -389,23 +590,17 @@ function renderArena() {
     if (playerHpTextEl) playerHpTextEl.textContent = `${stats.hp} / ${stats.hp}`;
     if (playerHpBarEl) playerHpBarEl.style.width = '100%';
 
-    // Wenn kein Gegner ausgewählt ist, Button deaktivieren
-    if (!state.currentEnemy) {
-      const enemyNameEl = document.getElementById('enemyName');
-      const arenaStatusEl = document.getElementById('arenaStatus');
-      const btnFightEl = document.getElementById('btnFight');
-      if (enemyNameEl) enemyNameEl.textContent = 'Gegner wählen';
-      if (arenaStatusEl) arenaStatusEl.innerHTML = '<p>Wähle einen Gegner aus der Liste.</p>';
-      if (btnFightEl) {
-        btnFightEl.disabled = true;
-        console.log('Fight button disabled (no enemy selected)');
-      }
-    } else {
-      // Wenn bereits ein Gegner ausgewählt ist, Button aktivieren
-      const btnFightEl = document.getElementById('btnFight');
-      if (btnFightEl) {
-        btnFightEl.disabled = false;
-        console.log('Fight button enabled (enemy already selected)');
+    if (state.arenaMode === '1v1') {
+      if (!state.currentEnemy) {
+        const enemyNameEl = document.getElementById('enemyName');
+        const arenaStatusEl = document.getElementById('arenaStatus');
+        const btnFightEl = document.getElementById('btnFight');
+        if (enemyNameEl) enemyNameEl.textContent = 'Gegner wählen';
+        if (arenaStatusEl) arenaStatusEl.innerHTML = '<p>Wähle einen Gegner aus der Liste.</p>';
+        if (btnFightEl) btnFightEl.disabled = true;
+      } else {
+        const btnFightEl = document.getElementById('btnFight');
+        if (btnFightEl) btnFightEl.disabled = false;
       }
     }
   } catch (error) {
@@ -419,8 +614,9 @@ let canvas, ctx;
 
 let gameState = {
   player: null,
-  enemy: null,
+  enemies: [],
   projectiles: [],
+  particles: [],
   obstacles: [],
   keys: {},
   animationId: null,
@@ -458,20 +654,23 @@ function hideFightOverlay() {
 
 function updateHud() {
   const p = gameState.player;
-  const e = gameState.enemy;
+  const enemies = gameState.enemies;
   if (p) {
     const bar = document.getElementById('hudPlayerHp');
     const text = document.getElementById('hudPlayerHpText');
     if (bar) bar.style.width = `${(Math.max(0, p.hp) / p.maxHp) * 100}%`;
     if (text) text.textContent = `${Math.max(0, Math.round(p.hp))} / ${p.maxHp}`;
   }
-  if (e) {
+  if (enemies.length > 0) {
+    const totalHp = enemies.reduce((s, e) => s + Math.max(0, e.hp), 0);
+    const totalMax = enemies.reduce((s, e) => s + e.maxHp, 0);
+    const alive = enemies.filter((e) => e.hp > 0).length;
     const bar = document.getElementById('hudEnemyHp');
     const text = document.getElementById('hudEnemyHpText');
     const label = document.getElementById('hudEnemyLabel');
-    if (bar) bar.style.width = `${(Math.max(0, e.hp) / e.maxHp) * 100}%`;
-    if (text) text.textContent = `${Math.max(0, Math.round(e.hp))} / ${e.maxHp}`;
-    if (label && state.currentEnemy) label.textContent = state.currentEnemy.name;
+    if (bar) bar.style.width = `${(totalHp / totalMax) * 100}%`;
+    if (text) text.textContent = `${Math.max(0, Math.round(totalHp))} / ${totalMax}`;
+    if (label) label.textContent = enemies.length > 1 ? `${alive} Gegner` : (state.currentEnemy?.name || 'Gegner');
   }
 }
 
@@ -486,15 +685,62 @@ function exitFight() {
   document.removeEventListener('keydown', handleKeyDown);
   document.removeEventListener('keyup', handleKeyUp);
   window.removeEventListener('resize', resizeFightCanvas);
+  if (musicStarted) playMenuMusic();
   hideFightOverlay();
   document.getElementById('btnNextOpponent').disabled = false;
   document.getElementById('btnFight').disabled = false;
   document.getElementById('controlsHint').classList.add('hidden');
 }
 
-function drawMech(x, y, angle, color, size = 20, isPlayer = false, enemyIndex = 0) {
+function drawThrusterFlame(ctx, x, y, angle, size, thrust) {
+  if (thrust <= 0.05) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  const flicker = 0.7 + Math.random() * 0.3;
+  const len = size * (0.8 + thrust * 1.2) * flicker;
+  const w = size * 0.35 * (0.6 + thrust * 0.4);
+
+  // Outer glow
+  const grad = ctx.createRadialGradient(-size * 0.5, 0, 0, -size * 0.5, 0, len);
+  grad.addColorStop(0, 'rgba(255, 200, 50, 0.7)');
+  grad.addColorStop(0.4, 'rgba(255, 120, 20, 0.4)');
+  grad.addColorStop(1, 'rgba(255, 60, 10, 0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.5, 0, len, w * 1.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Inner flame
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#ffdd44';
+  ctx.beginPath();
+  ctx.moveTo(-size * 0.5, -w * 0.5);
+  ctx.lineTo(-size * 0.5 - len * 0.6, 0);
+  ctx.lineTo(-size * 0.5, w * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bright core
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(-size * 0.5, 0, w * 0.3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawMech(x, y, angle, color, size = 20, isPlayer = false, enemyIndex = 0, thrust = 0) {
+  drawThrusterFlame(ctx, x, y, angle, size, thrust);
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8;
+
   if (isPlayer && typeof drawPlayerMechLayered === 'function') {
-    drawPlayerMechLayered(ctx, x, y, angle, size);
+    drawPlayerMechLayered(ctx, x, y, angle, size, color);
   } else if (!isPlayer && typeof drawEnemyMechSprite === 'function' && enemySprites.length > 0) {
     drawEnemyMechSprite(ctx, x, y, angle, size, enemyIndex);
   } else {
@@ -513,41 +759,149 @@ function drawMech(x, y, angle, color, size = 20, isPlayer = false, enemyIndex = 
     ctx.fill();
     ctx.restore();
   }
+
+  ctx.restore();
+}
+
+const MAX_PARTICLES = 80;
+function spawnExplosion(x, y, color, count) {
+  const n = Math.min(count || 5, 6);
+  for (let i = 0; i < n; i++) {
+    if (gameState.particles.length >= MAX_PARTICLES) break;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 0.5 + Math.random() * 2.5;
+    gameState.particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1.0,
+      decay: 0.03 + Math.random() * 0.02,
+      radius: 2 + Math.random() * 3,
+      color,
+    });
+  }
+}
+
+function updateParticles() {
+  if (gameState.particles.length > MAX_PARTICLES) {
+    gameState.particles = gameState.particles.slice(-MAX_PARTICLES);
+  }
+  gameState.particles = gameState.particles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.96;
+    p.vy *= 0.96;
+    p.life -= p.decay;
+    return p.life > 0;
+  });
+}
+
+function drawParticles() {
+  gameState.particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
 }
 
 function drawProjectile(proj) {
   const x = proj.x;
   const y = proj.y;
   const color = proj.color;
-  
-  // Winkel basierend auf Geschwindigkeit berechnen
   const angle = Math.atan2(proj.vy, proj.vx);
+  const weaponId = proj.weaponId || 'weapon_cannon';
+  const isPlayer = proj.owner === 'player';
+  const flameColor = isPlayer ? '#00ff88' : '#ff6b6b'; // Für Rückstoß/Flare
   
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
   
-  // Raketenkörper (längliches Rechteck)
-  ctx.fillStyle = color;
-  ctx.fillRect(-8, -2, 12, 4);
+  switch (weaponId) {
+    case 'weapon_plasma':
+      ctx.shadowColor = '#aa44ff';
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#ff66ff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#cc88ff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(2, -1, 2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'weapon_railgun':
+      ctx.shadowColor = '#4488ff';
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = '#66aaff';
+      ctx.fillRect(-14, -1.5, 20, 3);
+      ctx.fillStyle = '#aaddff';
+      ctx.fillRect(-12, -1, 16, 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-8, -0.5, 6, 1);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = flameColor;
+      ctx.fillRect(-16, -1, 4, 2);
+      break;
+    case 'weapon_minigun':
+      const electricBlue = isPlayer ? '#00ddff' : '#ff8844';
+      const electricBright = '#aaffff';
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = electricBright;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-6, 0);
+      ctx.lineTo(-2, -1.5);
+      ctx.lineTo(2, 1);
+      ctx.lineTo(6, 0);
+      ctx.stroke();
+      ctx.strokeStyle = electricBlue;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-4, 0.5);
+      ctx.lineTo(0, -1);
+      ctx.lineTo(4, 0.5);
+      ctx.stroke();
+      ctx.fillStyle = electricBright;
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'weapon_cannon':
+    default:
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = color;
+      ctx.fillRect(-8, -2, 12, 4);
+      ctx.beginPath();
+      ctx.moveTo(4, 0);
+      ctx.lineTo(-2, -3);
+      ctx.lineTo(-2, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = flameColor;
+      ctx.fillRect(-10, -1.5, 4, 3);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-9, -1, 2, 2);
+      break;
+  }
   
-  // Raketenspitze (Dreieck)
-  ctx.beginPath();
-  ctx.moveTo(4, 0);
-  ctx.lineTo(-2, -3);
-  ctx.lineTo(-2, 3);
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-  
-  // Raketenflamme (kleinerer Bereich hinten)
-  ctx.fillStyle = proj.owner === 'player' ? '#00ff88' : '#ff6b6b';
-  ctx.fillRect(-10, -1.5, 4, 3);
-  
-  // Glühender Kern
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-9, -1, 2, 2);
-  
+  ctx.shadowBlur = 0;
   ctx.restore();
 }
 
@@ -579,46 +933,48 @@ function drawHpBar(x, y, currentHp, maxHp, color, size = 20) {
 }
 
 function updatePlayer() {
-  // Während Countdown keine Steuerung
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   
   const p = gameState.player;
   const stats = computeRobotStats();
-  const maxSpeed = stats.speed * 0.3; // Langsamere Geschwindigkeit
-  const acceleration = 0.12; // Beschleunigung
-  const friction = 0.92; // Reibung (Verzögerung)
-  const rotSpeed = 0.045; // Rotation pro Frame
+  const maxSpeed = stats.speed * 0.18;  // Roboter langsamer als Schüsse (projSpeed 4.5)
+  const acceleration = 0.08;
+  const friction = 0.97;
+  const rotSpeed = 0.045;
   
-  // Rotation
   if (gameState.keys['ArrowLeft']) p.angle -= rotSpeed;
   if (gameState.keys['ArrowRight']) p.angle += rotSpeed;
   
-  // Geschwindigkeit initialisieren falls nicht vorhanden
   if (p.vx === undefined) p.vx = 0;
   if (p.vy === undefined) p.vy = 0;
+  if (p.thrust === undefined) p.thrust = 0;
   
-  // Beschleunigung basierend auf Eingabe
-  let targetVx = 0;
-  let targetVy = 0;
+  let thrusting = false;
   
   if (gameState.keys['ArrowUp']) {
-    targetVx = Math.cos(p.angle) * maxSpeed;
-    targetVy = Math.sin(p.angle) * maxSpeed;
+    p.vx += Math.cos(p.angle) * acceleration * maxSpeed;
+    p.vy += Math.sin(p.angle) * acceleration * maxSpeed;
+    thrusting = true;
   }
   if (gameState.keys['ArrowDown']) {
-    targetVx = -Math.cos(p.angle) * maxSpeed * 0.7;
-    targetVy = -Math.sin(p.angle) * maxSpeed * 0.7;
+    p.vx -= Math.cos(p.angle) * acceleration * maxSpeed * 0.5;
+    p.vy -= Math.sin(p.angle) * acceleration * maxSpeed * 0.5;
+    thrusting = true;
   }
   
-  // Trägheit: Geschwindigkeit langsam zur Zielgeschwindigkeit
-  p.vx += (targetVx - p.vx) * acceleration;
-  p.vy += (targetVy - p.vy) * acceleration;
-  
-  // Reibung (Verzögerung wenn keine Eingabe)
-  if (!gameState.keys['ArrowUp'] && !gameState.keys['ArrowDown']) {
-    p.vx *= friction;
-    p.vy *= friction;
+  // Geschwindigkeit begrenzen
+  const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+  if (speed > maxSpeed) {
+    p.vx = (p.vx / speed) * maxSpeed;
+    p.vy = (p.vy / speed) * maxSpeed;
   }
+  
+  p.vx *= friction;
+  p.vy *= friction;
+  
+  // Thrust-Wert für Flammen-Visualisierung
+  const targetThrust = thrusting ? Math.min(speed / maxSpeed + 0.3, 1.0) : 0;
+  p.thrust += (targetThrust - p.thrust) * 0.15;
   
   const prevX = p.x;
   const prevY = p.y;
@@ -631,69 +987,172 @@ function updatePlayer() {
   if (p.y < 0) p.y += canvas.height;
   if (p.y > canvas.height) p.y -= canvas.height;
 
-  // Hindernisse: Roboter aufhalten (nicht herausstoßen)
   for (let i = 0; i < gameState.obstacles.length; i++) {
     const obs = gameState.obstacles[i];
     if (circleRectCollision(p.x, p.y, 14, obs.x, obs.y, obs.w, obs.h)) {
-      stopRobotAtObstacle(p, prevX, prevY, 14);
-      break;
+      resolveObstacleCollision(p, 14, obs);
     }
   }
 
-  // Schießen
+  // Schild berühren = 10s Schutz
+  if (gameState.countdown === 0 && gameState.shield?.active) {
+    const sh = gameState.shield;
+    sh.x = canvas.width / 2;
+    sh.y = canvas.height / 2;
+    const dist = Math.hypot(p.x - sh.x, p.y - sh.y);
+    if (dist < sh.radius + 14) {
+      p.shieldUntil = Date.now() + 10000;
+      gameState.shield.active = false;
+      spawnExplosion(sh.x, sh.y, '#44aaff', 15);
+    }
+  }
+
+  // Schießen (beide Waffen gleichzeitig)
   const now = Date.now();
-  if (gameState.keys[' '] && now - gameState.lastShot > 200) { // Cooldown 200ms
+  if (gameState.keys[' '] && now - gameState.lastShot > 200) {
     gameState.lastShot = now;
+    const parts = getEquippedParts();
     const projSpeed = 4.5;
-    gameState.projectiles.push({
-      x: p.x + Math.cos(p.angle) * 18,
-      y: p.y + Math.sin(p.angle) * 18,
-      vx: Math.cos(p.angle) * projSpeed,
-      vy: Math.sin(p.angle) * projSpeed,
-      damage: stats.damage,
-      owner: 'player',
-      color: '#00d4aa',
+    const spreadAngle = 0.08;
+    [parts.weaponL, parts.weaponR].forEach((weapon, idx) => {
+      if (!weapon) return;
+      const useLeft = idx === 0;
+      const offset = useLeft ? -6 : 6;
+      const baseX = p.x + Math.cos(p.angle) * 18 + Math.cos(p.angle + Math.PI / 2) * offset;
+      const baseY = p.y + Math.sin(p.angle) * 18 + Math.sin(p.angle + Math.PI / 2) * offset;
+      const count = getWeaponShots(weapon.id);
+      const dmgPerProj = weapon.damage / count;
+      for (let i = 0; i < count; i++) {
+        const angleOff = (i - (count - 1) / 2) * spreadAngle;
+        const angle = p.angle + angleOff;
+        const posOff = (i - (count - 1) / 2) * 6;
+        const projColor = gameState.playerRobotIndex === 1 ? '#ff4757' : '#00d4aa';
+        const projX = baseX + Math.cos(p.angle + Math.PI / 2) * posOff;
+        const projY = baseY + Math.sin(p.angle + Math.PI / 2) * posOff;
+        gameState.projectiles.push({
+          x: projX,
+          y: projY,
+          vx: Math.cos(angle) * projSpeed,
+          vy: Math.sin(angle) * projSpeed,
+          damage: dmgPerProj,
+          owner: 'player',
+          weaponId: weapon.id,
+          color: projColor,
+          totalDist: 0,
+        });
+      }
     });
+    if (parts.weaponL || parts.weaponR) playShotSound();
   }
 }
 
-function updateEnemy() {
-  // Während Countdown keine KI-Bewegung
+function updateEnemies() {
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   
-  const e = gameState.enemy;
   const p = gameState.player;
-  if (!e || !p) return;
+  if (!p) return;
   
-  const maxSpeed = e.speed * 0.2; // Langsamere Geschwindigkeit
-  const acceleration = 0.10; // Beschleunigung
-  const friction = 0.92; // Reibung
+  gameState.enemies.forEach((e, eIdx) => {
+    if (e.hp <= 0) return;
   
-  // KI: Wrap-Around-Distanz zum Spieler (kürzester Weg)
-  let dx = p.x - e.x;
-  let dy = p.y - e.y;
+  const maxSpeed = e.speed * 0.3;  // Etwas schneller, aber langsamer als Schüsse (projSpeed 3.5)
+  const acceleration = 0.09;
+  const friction = 0.97;
+  if (e.thrust === undefined) e.thrust = 0;
+  if (e.retreatUntil === undefined) e.retreatUntil = 0;
+  if (e.strategy === undefined) e.strategy = 'aggressive';
+  
+  const wrapDist = (ax, ay, bx, by) => {
+    let dx = bx - ax;
+    let dy = by - ay;
+    if (Math.abs(dx) > canvas.width / 2) dx -= Math.sign(dx) * canvas.width;
+    if (Math.abs(dy) > canvas.height / 2) dy -= Math.sign(dy) * canvas.height;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+  
+  const now = Date.now();
+  const isRetreating = now < (e.retreatUntil || 0);
+  
+  let minAllyDist = Infinity;
+  let separationX = 0, separationY = 0;
+  gameState.enemies.forEach((other, oIdx) => {
+    if (oIdx === eIdx || other.hp <= 0) return;
+    const d2e = wrapDist(e.x, e.y, other.x, other.y);
+    if (d2e < minAllyDist) minAllyDist = d2e;
+    if (d2e < 90 && d2e > 0) {
+      const awayX = (e.x - other.x) / d2e;
+      const awayY = (e.y - other.y) / d2e;
+      const sepStrength = (90 - d2e) / 90;
+      separationX += awayX * sepStrength * maxSpeed * 2.5;
+      separationY += awayY * sepStrength * maxSpeed * 2.5;
+    }
+  });
+  
+  if (!isRetreating) {
+    const hpPercent = e.hp / e.maxHp;
+    const shouldRetreat = minAllyDist < 55 ||
+      (e.strategy === 'defensive' && hpPercent < 0.4) ||
+      (e.strategy === 'flanker' && (!e._lastFlank || now - e._lastFlank > 4500));
+    if (shouldRetreat) {
+      e.retreatUntil = now + 2200 + Math.random() * 1000;
+      if (e.strategy === 'flanker') e._lastFlank = now;
+    }
+  }
+  
+  // Ziel wählen: Spieler oder (in 1v3) zufällig auch andere Gegner
+  const is1v3 = state.arenaMode === '1v3';
+  if (e._targetSwitchAt === undefined || now > e._targetSwitchAt) {
+    e._targetSwitchAt = now + 2500 + Math.random() * 2000;
+    const targets = [{ player: true }];
+    if (is1v3) {
+      gameState.enemies.forEach((other, oIdx) => {
+        if (oIdx !== eIdx && other.hp > 0) targets.push({ player: false, idx: oIdx });
+      });
+    }
+    const t = targets[Math.floor(Math.random() * targets.length)];
+    e._targetPlayer = t.player;
+    e._targetEnemyIdx = t.idx;
+  }
+  let targetX, targetY;
+  if (e._targetPlayer) {
+    targetX = p.x;
+    targetY = p.y;
+  } else if (e._targetEnemyIdx !== undefined) {
+    const other = gameState.enemies[e._targetEnemyIdx];
+    if (other && other.hp > 0) {
+      targetX = other.x;
+      targetY = other.y;
+    } else {
+      targetX = p.x;
+      targetY = p.y;
+    }
+  } else {
+    targetX = p.x;
+    targetY = p.y;
+  }
+  const dist = wrapDist(e.x, e.y, targetX, targetY);
+  
+  let dx = targetX - e.x;
+  let dy = targetY - e.y;
   if (Math.abs(dx) > canvas.width / 2) dx -= Math.sign(dx) * canvas.width;
   if (Math.abs(dy) > canvas.height / 2) dy -= Math.sign(dy) * canvas.height;
-  const dist = Math.sqrt(dx * dx + dy * dy);
   
   // Geschwindigkeit initialisieren falls nicht vorhanden
   if (e.vx === undefined) e.vx = 0;
   if (e.vy === undefined) e.vy = 0;
   
-  let targetVx = 0;
-  let targetVy = 0;
+  let targetVx = separationX;
+  let targetVy = separationY;
   
   if (dist > 0) {
     const targetAngle = Math.atan2(dy, dx);
     let angleDiff = targetAngle - e.angle;
     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
     while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-    e.angle += angleDiff * 0.03;
+    e.angle += angleDiff * 0.05;
     
-    // Hindernisvermeidung: Prüfe ob Hindernis im Weg liegt
-    let avoidX = 0;
-    let avoidY = 0;
-    const lookAhead = 50; // Vorausschau-Distanz
+    let avoidX = 0, avoidY = 0;
+    const lookAhead = 50;
     const futureX = e.x + Math.cos(e.angle) * lookAhead;
     const futureY = e.y + Math.sin(e.angle) * lookAhead;
     
@@ -702,8 +1161,6 @@ function updateEnemy() {
       const odx = e.x - obs.x;
       const ody = e.y - obs.y;
       const oDist = Math.sqrt(odx * odx + ody * ody);
-      
-      // Hindernis in der Nähe? Ausweichen!
       if (oDist < 80 || circleRectCollision(futureX, futureY, 14, obs.x, obs.y, obs.w, obs.h)) {
         const avoidStrength = Math.max(0, 1 - oDist / 100);
         avoidX += (odx / oDist) * avoidStrength * maxSpeed * 1.5;
@@ -711,25 +1168,44 @@ function updateEnemy() {
       }
     }
     
-    // Bewegung zum Spieler + Hindernisvermeidung
-    if (dist > 80) {
-      targetVx = Math.cos(e.angle) * maxSpeed + avoidX;
-      targetVy = Math.sin(e.angle) * maxSpeed + avoidY;
-    } else {
-      targetVx = Math.cos(e.angle) * maxSpeed * 0.4 + avoidX;
-      targetVy = Math.sin(e.angle) * maxSpeed * 0.4 + avoidY;
+    let moveStrength = 1.0;
+    const moveDir = isRetreating ? -1 : 1;
+    if (!isRetreating) {
+      if (e.strategy === 'evasive') {
+        if (dist < 70) moveStrength = -0.5;
+        else if (dist < 110) moveStrength = 0.25;
+        else moveStrength = 1.0;
+      } else if (e.strategy === 'defensive' && e.hp / e.maxHp < 0.6) {
+        moveStrength = dist < 100 ? 0.5 : 0.85;
+      } else if (e.strategy === 'flanker') {
+        moveStrength = dist > 90 ? 1.0 : 0.6;
+      } else {
+        moveStrength = dist > 80 ? 1.0 : 0.7;
+      }
     }
+    targetVx += Math.cos(e.angle) * maxSpeed * moveStrength * moveDir + avoidX;
+    targetVy += Math.sin(e.angle) * maxSpeed * moveStrength * moveDir + avoidY;
   }
   
-  // Trägheit: Geschwindigkeit langsam zur Zielgeschwindigkeit
-  e.vx += (targetVx - e.vx) * acceleration;
-  e.vy += (targetVy - e.vy) * acceleration;
-  
-  // Reibung
-  if (dist <= 80) {
-    e.vx *= friction;
-    e.vy *= friction;
+  const targetSpeed = Math.sqrt(targetVx * targetVx + targetVy * targetVy);
+  const isThrusting = targetSpeed > 0.1;
+
+  if (isThrusting) {
+    e.vx += (targetVx - e.vx) * acceleration;
+    e.vy += (targetVy - e.vy) * acceleration;
   }
+  
+  const eSpeed = Math.sqrt(e.vx * e.vx + e.vy * e.vy);
+  if (eSpeed > maxSpeed) {
+    e.vx = (e.vx / eSpeed) * maxSpeed;
+    e.vy = (e.vy / eSpeed) * maxSpeed;
+  }
+  
+  e.vx *= friction;
+  e.vy *= friction;
+  
+  const thrustTarget = isThrusting ? Math.min(eSpeed / maxSpeed + 0.3, 1.0) : 0;
+  e.thrust += (thrustTarget - e.thrust) * 0.15;
   
   const prevX = e.x;
   const prevY = e.y;
@@ -742,30 +1218,55 @@ function updateEnemy() {
   if (e.y < 0) e.y += canvas.height;
   if (e.y > canvas.height) e.y -= canvas.height;
 
-  // Hindernisse: Roboter aufhalten (nicht herausstoßen)
   for (let i = 0; i < gameState.obstacles.length; i++) {
     const obs = gameState.obstacles[i];
     if (circleRectCollision(e.x, e.y, 14, obs.x, obs.y, obs.w, obs.h)) {
-      stopRobotAtObstacle(e, prevX, prevY, 14);
-      break;
+      resolveObstacleCollision(e, 14, obs);
     }
   }
 
-  // Gelegentlich schießen (einfach: alle 1.5 Sekunden)
-  const now = Date.now();
-  if (now - gameState.enemyLastShot > 1500) {
-    gameState.enemyLastShot = now;
-    const projSpeed = 3.5;
-    gameState.projectiles.push({
-      x: e.x + Math.cos(e.angle) * 18,
-      y: e.y + Math.sin(e.angle) * 18,
-      vx: Math.cos(e.angle) * projSpeed,
-      vy: Math.sin(e.angle) * projSpeed,
-      damage: e.damage,
-      owner: 'enemy',
-      color: '#ff4757',
-    });
+  // Schild berühren = 10s Schutz
+  if (gameState.countdown === 0 && gameState.shield?.active) {
+    const sh = gameState.shield;
+    sh.x = canvas.width / 2;
+    sh.y = canvas.height / 2;
+    const dist = Math.hypot(e.x - sh.x, e.y - sh.y);
+    if (dist < sh.radius + 14) {
+      e.shieldUntil = Date.now() + 10000;
+      gameState.shield.active = false;
+      spawnExplosion(sh.x, sh.y, '#44aaff', 15);
+    }
   }
+
+  const shotCooldown = e.shotCooldown ?? 850;
+  if (now - (e.lastShot || 0) > shotCooldown) {
+    e.lastShot = now;
+    playShotSound();
+    const projSpeed = 3.5;
+    const weaponId = e.weaponId || 'weapon_cannon';
+    const count = e.shotsPerVolley ?? 1;  // Gegner: 1 Schuss (oder zufällig 1–3)
+    const dmgPerProj = e.damage / count;
+    const spreadAngle = 0.08;
+    for (let i = 0; i < count; i++) {
+      const angleOff = (i - (count - 1) / 2) * spreadAngle;
+      const angle = e.angle + angleOff;
+      const posOff = (i - (count - 1) / 2) * 6;
+      const proj = {
+        x: e.x + Math.cos(e.angle) * 18 + Math.cos(e.angle + Math.PI / 2) * posOff,
+        y: e.y + Math.sin(e.angle) * 18 + Math.sin(e.angle + Math.PI / 2) * posOff,
+        vx: Math.cos(angle) * projSpeed,
+        vy: Math.sin(angle) * projSpeed,
+        damage: dmgPerProj,
+        owner: 'enemy',
+        enemyIndex: gameState.enemies.indexOf(e),
+        weaponId,
+        color: '#ff4757',
+        totalDist: 0,
+      };
+      gameState.projectiles.push(proj);
+    }
+  }
+  });
 }
 
 // —— Hindernisse: zufällig pro Kampf
@@ -815,23 +1316,75 @@ function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
   return dx * dx + dy * dy < radius * radius;
 }
 
-// Roboter an Hindernis aufhalten: Position zurücksetzen, Geschwindigkeit stoppen
-function stopRobotAtObstacle(robot, prevX, prevY, radius) {
-  robot.x = prevX;
-  robot.y = prevY;
-  robot.vx = 0;
-  robot.vy = 0;
+function resolveObstacleCollision(robot, radius, obs) {
+  const halfW = obs.w / 2;
+  const halfH = obs.h / 2;
+  const closestX = Math.max(obs.x - halfW, Math.min(robot.x, obs.x + halfW));
+  const closestY = Math.max(obs.y - halfH, Math.min(robot.y, obs.y + halfH));
+  let dx = robot.x - closestX;
+  let dy = robot.y - closestY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist === 0) {
+    dx = robot.x - obs.x;
+    dy = robot.y - obs.y;
+    const d2 = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= d2;
+    dy /= d2;
+  } else {
+    dx /= dist;
+    dy /= dist;
+  }
+
+  const penetration = radius - dist;
+  robot.x += dx * (penetration + 0.5);
+  robot.y += dy * (penetration + 0.5);
+
+  const velDot = (robot.vx || 0) * dx + (robot.vy || 0) * dy;
+  if (velDot < 0) {
+    robot.vx -= velDot * dx;
+    robot.vy -= velDot * dy;
+  }
+}
+
+function drawShieldRing(x, y, radius) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(68, 170, 255, 0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, radius + Math.sin(Date.now() / 150) * 2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawShield() {
+  const sh = gameState.shield;
+  if (!sh || !sh.active) return;
+  sh.x = canvas.width / 2;
+  sh.y = canvas.height / 2;
+  const pulse = 0.9 + Math.sin(Date.now() / 200) * 0.1;
+  ctx.save();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(68, 170, 255, 0.9)';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(sh.x, sh.y, sh.radius * pulse, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(68, 170, 255, 0.25)';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
 }
 
 function drawObstacle(obs) {
   const x = obs.x - obs.w / 2;
   const y = obs.y - obs.h / 2;
-  ctx.fillStyle = '#2a3a4a';
+  ctx.fillStyle = '#3a4555';
   ctx.fillRect(x, y, obs.w, obs.h);
-  ctx.strokeStyle = '#1a2530';
+  ctx.strokeStyle = '#4a5568';
   ctx.lineWidth = 2;
   ctx.strokeRect(x, y, obs.w, obs.h);
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
   ctx.fillRect(x + 2, y + 2, obs.w - 4, obs.h - 4);
 }
 
@@ -908,39 +1461,68 @@ function updateProjectiles() {
     return;
   }
   
-  const stats = computeRobotStats();
+  const stats = gameState.playerStats || computeRobotStats();
   const p = gameState.player;
-  const e = gameState.enemy;
+  const enemies = gameState.enemies;
   
-  gameState.projectiles = gameState.projectiles.filter((proj) => {
+  // 1. Alle Projektile bewegen
+  const maxDist = Math.max(canvas.width, canvas.height) * 0.5;
+  gameState.projectiles.forEach((proj) => {
+    const dist = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy);
+    proj.totalDist = (proj.totalDist || 0) + dist;
     proj.x += proj.vx;
     proj.y += proj.vy;
-    
-    // Wrap-Around: Projektile tauchen auf der anderen Seite auf
     if (proj.x < 0) proj.x += canvas.width;
     if (proj.x > canvas.width) proj.x -= canvas.width;
     if (proj.y < 0) proj.y += canvas.height;
     if (proj.y > canvas.height) proj.y -= canvas.height;
+  });
+  
+  // 2. Projektile, die sich gegenseitig treffen, zerstören sich
+  const projToRemove = new Set();
+  const projs = gameState.projectiles;
+  for (let i = 0; i < projs.length; i++) {
+    if (projToRemove.has(projs[i])) continue;
+    for (let j = i + 1; j < projs.length; j++) {
+      if (projToRemove.has(projs[j])) continue;
+      if (projs[i].owner === projs[j].owner) continue; // Eigene Schüsse zerstören sich nicht
+      const dx = projs[i].x - projs[j].x;
+      const dy = projs[i].y - projs[j].y;
+      if (dx * dx + dy * dy < 400) { // ~20px Kollisionsradius
+        projToRemove.add(projs[i]);
+        projToRemove.add(projs[j]);
+        spawnExplosion((projs[i].x + projs[j].x) / 2, (projs[i].y + projs[j].y) / 2, '#ffaa00', 8);
+        break;
+      }
+    }
+  }
+  
+  gameState.projectiles = gameState.projectiles.filter((proj) => {
+    if (projToRemove.has(proj)) return false;
     
-    // Lebensdauer: Projektile nach 3 Sekunden entfernen
-    if (!proj.born) proj.born = Date.now();
-    if (Date.now() - proj.born > 3000) return false;
+    // Maximal einmal Arena durchqueren
+    if ((proj.totalDist || 0) > maxDist) return false;
 
-    // Kollision mit Hindernissen (Rakete verschwindet)
+    // Kollision mit Hindernissen
     for (let i = 0; i < gameState.obstacles.length; i++) {
       const obs = gameState.obstacles[i];
       if (pointInRect(proj.x, proj.y, obs.x, obs.y, obs.w, obs.h)) {
+        spawnExplosion(proj.x, proj.y, proj.color, 10);
         return false;
       }
     }
     
-    // Kollision mit Spieler (kleinerer Radius)
     if (proj.owner === 'enemy' && p) {
       const dx = proj.x - p.x;
       const dy = proj.y - p.y;
-      if (dx * dx + dy * dy < 225) { // Radius ~15
+      if (dx * dx + dy * dy < 225) {
+        if (Date.now() < (p.shieldUntil || 0)) {
+          spawnExplosion(proj.x, proj.y, '#44aaff', 8);
+          return false;
+        }
         const dmg = Math.max(1, Math.floor(proj.damage - stats.armor / 2));
         p.hp -= dmg;
+        spawnExplosion(proj.x, proj.y, '#ff4757', 12);
         updatePlayerHp(p.hp, p.maxHp);
         if (p.hp <= 0) {
           endFight(false);
@@ -948,19 +1530,53 @@ function updateProjectiles() {
         return false;
       }
     }
-    
-    // Kollision mit Gegner (kleinerer Radius)
-    if (proj.owner === 'player' && e) {
-      const dx = proj.x - e.x;
-      const dy = proj.y - e.y;
-      if (dx * dx + dy * dy < 225) { // Radius ~15
-        const dmg = Math.max(1, Math.floor(proj.damage - e.armor / 2));
-        e.hp -= dmg;
-        updateEnemyHp(e.hp, e.maxHp);
-        if (e.hp <= 0) {
-          endFight(true);
+
+    if (proj.owner === 'enemy' && enemies && proj.enemyIndex !== undefined) {
+      for (let i = 0; i < enemies.length; i++) {
+        if (i === proj.enemyIndex) continue;
+        const e = enemies[i];
+        if (e.hp <= 0) continue;
+        const dx = proj.x - e.x;
+        const dy = proj.y - e.y;
+        if (dx * dx + dy * dy < 225) {
+          if (Date.now() < (e.shieldUntil || 0)) {
+            spawnExplosion(proj.x, proj.y, '#44aaff', 8);
+            return false;
+          }
+          const dmg = Math.max(1, Math.floor(proj.damage - e.armor / 2));
+          e.hp -= dmg;
+          spawnExplosion(proj.x, proj.y, '#ff4757', 12);
+          const alive = enemies.filter((x) => x.hp > 0);
+          if (alive.length === 0) {
+            endFight(true);
+          }
+          return false;
         }
-        return false;
+      }
+    }
+    
+    if (proj.owner === 'player' && enemies) {
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        if (e.hp <= 0) continue;
+        const dx = proj.x - e.x;
+        const dy = proj.y - e.y;
+        if (dx * dx + dy * dy < 225) {
+          if (Date.now() < (e.shieldUntil || 0)) {
+            spawnExplosion(proj.x, proj.y, '#44aaff', 8);
+            return false;
+          }
+          const dmgMult = gameState.playerRobotIndex === 1 ? 1.44 : 1.2; // Zweiter Mech: 20% mehr als erster
+          const dmg = Math.max(1, Math.floor(proj.damage * dmgMult - e.armor / 2));
+          e.hp -= dmg;
+          const hitColor = gameState.playerRobotIndex === 1 ? '#ff4757' : '#00d4aa';
+          spawnExplosion(proj.x, proj.y, hitColor, 12);
+          const alive = enemies.filter((x) => x.hp > 0);
+          if (alive.length === 0) {
+            endFight(true);
+          }
+          return false;
+        }
       }
     }
     
@@ -969,20 +1585,18 @@ function updateProjectiles() {
 }
 
 function render() {
-  // Hintergrund weiß
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#0a0e14';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Gitter (hellgrau für weißen Hintergrund)
-  ctx.strokeStyle = '#e0e0e0';
+  ctx.strokeStyle = '#1a2433';
   ctx.lineWidth = 1;
-  for (let i = 0; i < canvas.width; i += 40) {
+  for (let i = 0; i < canvas.width; i += 80) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
     ctx.lineTo(i, canvas.height);
     ctx.stroke();
   }
-  for (let i = 0; i < canvas.height; i += 40) {
+  for (let i = 0; i < canvas.height; i += 80) {
     ctx.beginPath();
     ctx.moveTo(0, i);
     ctx.lineTo(canvas.width, i);
@@ -992,8 +1606,10 @@ function render() {
   // Countdown anzeigen
   if (gameState.countdown > 0) {
     const elapsed = Date.now() - gameState.countdownStartTime;
-    const remaining = Math.ceil((3000 - elapsed) / 1000);
-    if (remaining > 0) {
+    if (elapsed >= 2990) {
+      gameState.countdown = 0;
+    } else {
+      const remaining = Math.max(1, Math.ceil((3000 - elapsed) / 1000));
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
@@ -1007,8 +1623,6 @@ function render() {
       ctx.font = '24px Rajdhani';
       ctx.fillText('Kampf beginnt...', canvas.width / 2, canvas.height / 2 + 60);
       return;
-    } else {
-      gameState.countdown = 0;
     }
   }
   
@@ -1017,7 +1631,7 @@ function render() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    const winnerColor = gameState.winner === 'player' ? '#00d4aa' : '#ff4757';
+    const winnerColor = gameState.winner === 'player' ? (gameState.playerRobotIndex === 1 ? '#ff4757' : '#00d4aa') : '#ff4757';
     const winnerText = gameState.winner === 'player' ? 'SIEG!' : 'NIEDERLAGE';
     
     ctx.fillStyle = winnerColor;
@@ -1037,55 +1651,82 @@ function render() {
     drawObstacle(obs);
   });
 
+  drawShield();
+
   // Projektile
   gameState.projectiles.forEach((proj) => {
     drawProjectile(proj);
   });
   
-  // Gegner
-  if (gameState.enemy) {
-    drawMech(gameState.enemy.x, gameState.enemy.y, gameState.enemy.angle, '#ff4757', 14, false, gameState.enemy.spriteIndex || 0);
-    drawHpBar(gameState.enemy.x, gameState.enemy.y, gameState.enemy.hp, gameState.enemy.maxHp, '#ff4757', 14);
-  }
+  gameState.enemies.forEach((e) => {
+    if (e.hp > 0) {
+      if (Date.now() < (e.shieldUntil || 0)) drawShieldRing(e.x, e.y, 20);
+      drawMech(e.x, e.y, e.angle, '#ff4757', 14, false, e.spriteIndex || 0, e.thrust || 0);
+      drawHpBar(e.x, e.y, e.hp, e.maxHp, '#ff4757', 14);
+    }
+  });
   
   // Spieler
   if (gameState.player) {
-    drawMech(gameState.player.x, gameState.player.y, gameState.player.angle, '#00d4aa', 14, true);
-    drawHpBar(gameState.player.x, gameState.player.y, gameState.player.hp, gameState.player.maxHp, '#00d4aa', 14);
+    if (Date.now() < (gameState.player.shieldUntil || 0)) drawShieldRing(gameState.player.x, gameState.player.y, 20);
+    const isSecondMech = gameState.playerRobotIndex === 1;
+    const playerColor = isSecondMech ? '#ff4757' : '#00d4aa';
+    drawMech(gameState.player.x, gameState.player.y, gameState.player.angle, playerColor, 14, true, 0, gameState.player.thrust || 0);
+    drawHpBar(gameState.player.x, gameState.player.y, gameState.player.hp, gameState.player.maxHp, playerColor, 14);
   }
+
+  // Partikel / Explosionen
+  drawParticles();
 }
 
 function gameLoop() {
   if (!state.fightInProgress) return;
   
-  // Countdown aktualisieren
+  // Countdown aktualisieren (robust: auch bei niedriger FPS)
   if (gameState.countdown > 0) {
     const elapsed = Date.now() - gameState.countdownStartTime;
-    if (elapsed >= 3000) {
+    if (elapsed >= 2990) {
       gameState.countdown = 0;
     }
   }
   
   updatePlayer();
-  updateEnemy();
+  updateEnemies();
   
-  // Kollisionserkennung und -reaktion zwischen Robotern
-  if (gameState.player && gameState.enemy && !gameState.fightEnded && gameState.countdown === 0) {
-    if (checkCollision(gameState.player, gameState.enemy)) {
-      resolveCollision(gameState.player, gameState.enemy);
+  if (gameState.player && !gameState.fightEnded && gameState.countdown === 0) {
+    gameState.enemies.forEach((e) => {
+      if (e.hp > 0 && checkCollision(gameState.player, e)) {
+        resolveCollision(gameState.player, e);
+      }
+    });
+    for (let i = 0; i < gameState.enemies.length; i++) {
+      for (let j = i + 1; j < gameState.enemies.length; j++) {
+        const a = gameState.enemies[i];
+        const b = gameState.enemies[j];
+        if (a.hp > 0 && b.hp > 0 && checkCollision(a, b)) {
+          resolveCollision(a, b);
+        }
+      }
     }
   }
   
   updateProjectiles();
+  updateParticles();
   
-  // HP-Anzeigen aktualisieren (Arena-Seite + Vollbild-HUD)
-  if (gameState.player && !gameState.fightEnded) {
-    updatePlayerHp(gameState.player.hp, gameState.player.maxHp);
+  // HP-Anzeigen (gedrosselt: nur alle 80ms für bessere Performance)
+  const now = Date.now();
+  if (!gameState._lastHpUpdate || now - gameState._lastHpUpdate > 80 || gameState.fightEnded) {
+    gameState._lastHpUpdate = now;
+    if (gameState.player && !gameState.fightEnded) {
+      updatePlayerHp(gameState.player.hp, gameState.player.maxHp);
+    }
+    if (gameState.enemies.length > 0 && !gameState.fightEnded) {
+      const totalHp = gameState.enemies.reduce((s, e) => s + Math.max(0, e.hp), 0);
+      const totalMax = gameState.enemies.reduce((s, e) => s + e.maxHp, 0);
+      updateEnemyHp(totalHp, totalMax);
+    }
+    updateHud();
   }
-  if (gameState.enemy && !gameState.fightEnded) {
-    updateEnemyHp(gameState.enemy.hp, gameState.enemy.maxHp);
-  }
-  updateHud();
   
   render();
   
@@ -1110,24 +1751,36 @@ function endFight(won) {
   gameState.fightEnded = true;
   gameState.winner = won ? 'player' : 'enemy';
   
-  // Credits sofort gutschreiben
   if (won) {
-    state.money += state.currentEnemy.reward;
+    const enemies = state.currentEnemies || [state.currentEnemy];
+    const reward = 3000;
+    const scorePoints = enemies.reduce((s, e) => s + Math.round((e?.power || 0) + (e?.reward || 0) / 2), 0);
+    state.money += reward;
+    state.score += scorePoints;
     updateMoney();
+    updateScoreDisplay();
+  } else {
+    state.lives--;
+    updateLivesDisplay();
   }
   
-  // Nach 3 Sekunden Vollbild verlassen
   setTimeout(() => {
     exitFight();
     
+    if (!won && state.lives <= 0) {
+      showGameOver();
+      return;
+    }
+    
     const arenaStatusEl = document.getElementById('arenaStatus');
     if (won) {
+      const reward = 3000;
       if (arenaStatusEl) {
-        arenaStatusEl.innerHTML = `<p class="win">Sieg! Du erhältst <strong>${state.currentEnemy.reward} Credits</strong>.</p>`;
+        arenaStatusEl.innerHTML = `<p class="win">Sieg! Du erhältst <strong>${reward} Credits</strong>.</p>`;
       }
     } else {
       if (arenaStatusEl) {
-        arenaStatusEl.innerHTML = '<p class="lose">Niederlage. Verbessere deinen Mech in der Garage und im Shop.</p>';
+        arenaStatusEl.innerHTML = `<p class="lose">Niederlage! Noch <strong>${state.lives}</strong> Leben übrig.</p>`;
       }
     }
   }, 3000);
@@ -1158,27 +1811,26 @@ function handleKeyUp(e) {
 }
 
 function fight() {
-  if (state.fightInProgress || !state.currentEnemy) return;
+  const is1v3 = state.arenaMode === '1v3';
+  if (state.fightInProgress) return;
+  if (!is1v3 && !state.currentEnemy) return;
   
-  // Vollbild-Overlay anzeigen
   showFightOverlay();
   initCanvas();
   
   state.fightInProgress = true;
   gameState.fightEnded = false;
   gameState.winner = null;
+  playCombatMusic();
   document.getElementById('btnFight').disabled = true;
   document.getElementById('btnNextOpponent').disabled = true;
   
-  // Fenster-Resize beobachten
   window.addEventListener('resize', resizeFightCanvas);
-  
-  // Canvas fokussieren
   canvas.focus();
   
   const playerStats = computeRobotStats();
+  gameState.playerStats = playerStats;
   
-  // Spieler initialisieren
   gameState.player = {
     x: canvas.width * 0.2,
     y: canvas.height * 0.5,
@@ -1187,37 +1839,64 @@ function fight() {
     maxHp: playerStats.hp,
     vx: 0,
     vy: 0,
+    shieldUntil: 0,
   };
+  gameState.playerRobotIndex = state.activeRobotIndex;
   
-  // Gegner initialisieren
-  gameState.enemy = {
-    x: canvas.width * 0.8,
-    y: canvas.height * 0.5,
+  const opponents = is1v3 ? generateOpponents().slice(0, 3) : [state.currentEnemy];
+  state.currentEnemies = opponents;
+  
+  const positions = is1v3
+    ? [
+        { x: 0.75, y: 0.25 },
+        { x: 0.85, y: 0.5 },
+        { x: 0.75, y: 0.75 },
+      ]
+    : [{ x: 0.8, y: 0.5 }];
+  
+  gameState.enemies = opponents.map((opp, i) => ({
+    x: canvas.width * positions[i].x,
+    y: canvas.height * positions[i].y,
     angle: Math.PI,
-    hp: state.currentEnemy.hp,
-    maxHp: state.currentEnemy.hp,
-    armor: state.currentEnemy.armor,
-    damage: state.currentEnemy.damage,
-    speed: state.currentEnemy.speed,
+    hp: opp.hp,
+    maxHp: opp.hp,
+    armor: opp.armor,
+    damage: opp.damage,
+    speed: opp.speed,
+    reward: opp.reward,
+    name: opp.name,
+    weaponId: opp.weaponId || 'weapon_cannon',
     vx: 0,
     vy: 0,
     spriteIndex: Math.floor(Math.random() * 3),
-  };
+    lastShot: 0,
+    shieldUntil: 0,
+    retreatUntil: 0,
+    strategy: ['aggressive', 'defensive', 'evasive', 'flanker'][Math.floor(Math.random() * 4)],
+    shotCooldown: 550 + Math.floor(Math.random() * 600),  // 550–1150 ms, variiert pro Gegner
+  }));
   
   gameState.projectiles = [];
+  gameState.particles = [];
   gameState.keys = {};
   gameState.lastShot = 0;
+  gameState.lastWeaponFired = 'R'; // Nächster Schuss von links
   gameState.enemyLastShot = 0;
 
   // Zufällige Hindernisse für diesen Kampf
   generateObstacles();
+  
+  // Schild in der Mitte (berühren = 10s Schutz)
+  gameState.shield = { x: canvas.width / 2, y: canvas.height / 2, radius: 28, active: true };
   
   // Countdown starten
   gameState.countdown = 3;
   gameState.countdownStartTime = Date.now();
   
   updatePlayerHp(gameState.player.hp, gameState.player.maxHp);
-  updateEnemyHp(gameState.enemy.hp, gameState.enemy.maxHp);
+  const totalHp = gameState.enemies.reduce((s, e) => s + e.hp, 0);
+  const totalMax = gameState.enemies.reduce((s, e) => s + e.maxHp, 0);
+  updateEnemyHp(totalHp, totalMax);
   
   // Tastatur-Events
   document.addEventListener('keydown', handleKeyDown);
@@ -1265,23 +1944,186 @@ function initArena() {
   console.log('Arena buttons initialized');
 }
 
-// —— Start
-function init() {
+// —— Highscore-System
+function getHighScores() {
+  try {
+    return JSON.parse(localStorage.getItem('mechArenaHighScores')) || [];
+  } catch { return []; }
+}
+
+function saveHighScore(name, score) {
+  const scores = getHighScores();
+  scores.push({ name, score, date: Date.now() });
+  scores.sort((a, b) => b.score - a.score);
+  const top10 = scores.slice(0, 10);
+  localStorage.setItem('mechArenaHighScores', JSON.stringify(top10));
+  return top10;
+}
+
+function renderHighScoreList(currentScore) {
+  const list = document.getElementById('highscoreList');
+  if (!list) return;
+  const scores = getHighScores();
+  list.innerHTML = '';
+  if (scores.length === 0) {
+    list.innerHTML = '<li style="justify-content:center;color:var(--text-dim)">Noch keine Einträge</li>';
+    return;
+  }
+  scores.forEach((entry, i) => {
+    const li = document.createElement('li');
+    if (entry.score === currentScore) li.className = 'hs-current';
+    li.innerHTML = `<span class="hs-rank">#${i + 1}</span><span class="hs-name">${entry.name}</span><span class="hs-score">${entry.score}</span>`;
+    list.appendChild(li);
+  });
+}
+
+function showGameOver() {
+  const screen = document.getElementById('gameOverScreen');
+  const app = document.getElementById('app');
+  const finalScore = document.getElementById('finalScore');
+  const nameInput = document.getElementById('playerNameInput');
+  const saveBtn = document.getElementById('saveScoreBtn');
+
+  if (finalScore) finalScore.textContent = state.score;
+  if (screen) screen.classList.remove('hidden');
+  if (app) app.classList.add('hidden');
+
+  renderHighScoreList(state.score);
+
+  if (saveBtn) saveBtn.disabled = false;
+  if (nameInput) {
+    nameInput.value = '';
+    nameInput.focus();
+  }
+
+  const handleSave = () => {
+    const name = (nameInput?.value || '').trim() || 'Anonym';
+    saveHighScore(name, state.score);
+    renderHighScoreList(state.score);
+    saveBtn.disabled = true;
+    nameInput.disabled = true;
+  };
+
+  saveBtn?.replaceWith(saveBtn.cloneNode(true));
+  const newSaveBtn = document.getElementById('saveScoreBtn');
+  newSaveBtn?.addEventListener('click', handleSave);
+
+  nameInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !newSaveBtn.disabled) handleSave();
+  });
+}
+
+function resetGame() {
+  state.money = INITIAL_STATE.money;
+  state.ownedPartIds = [...INITIAL_STATE.ownedPartIds];
+  state.weaponShots = { ...INITIAL_STATE.weaponShots };
+  state.robots = INITIAL_STATE.robots.map((r) => ({ name: r.name, equipped: Object.assign({}, r.equipped) }));
+  state.activeRobotIndex = 0;
+  state.currentEnemy = null;
+  state.currentEnemies = null;
+  state.fightInProgress = false;
+  state.lives = INITIAL_STATE.lives;
+  state.score = INITIAL_STATE.score;
+
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const app = document.getElementById('app');
+  if (gameOverScreen) gameOverScreen.classList.add('hidden');
+  if (app) app.classList.remove('hidden');
+
+  updateMoney();
+  updateLivesDisplay();
+  updateScoreDisplay();
+  renderGarage();
+  renderArena();
+  renderShop();
+
+  // Zur Garage navigieren
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const garageBtn = document.querySelector('.nav-btn[data-screen="garage"]');
+  const garageScreen = document.getElementById('garage');
+  if (garageBtn) garageBtn.classList.add('active');
+  if (garageScreen) garageScreen.classList.add('active');
+}
+
+function initGameOver() {
+  const restartBtn = document.getElementById('restartBtn');
+  if (!restartBtn) return;
+  restartBtn.addEventListener('click', () => {
+    resetGame();
+  });
+}
+
+// —— Start Screen → Intro → Spiel
+function initStartScreen() {
+  const startScreen = document.getElementById('startScreen');
+  const startBtn = document.getElementById('startBtn');
+  const introScreen = document.getElementById('introScreen');
+  if (!startScreen || !startBtn) return;
+
+  startBtn.addEventListener('click', () => {
+    startMusic();
+    startScreen.classList.add('hidden');
+    introScreen.classList.remove('hidden');
+    playIntroSpeech();
+  });
+}
+
+const introSpeech = new Audio('introspeech.wav');
+introSpeech.volume = 0.9;
+
+function playIntroSpeech() {
+  if (currentMusic) currentMusic.volume = 0.1;
+  introSpeech.currentTime = 0;
+  introSpeech.play().catch(() => {});
+  introSpeech.onended = () => { if (currentMusic) currentMusic.volume = 0.3; };
+}
+
+function stopIntroSpeech() {
+  introSpeech.pause();
+  introSpeech.currentTime = 0;
+  if (currentMusic) currentMusic.volume = 0.3;
+}
+
+function initIntro() {
+  const introScreen = document.getElementById('introScreen');
+  const enterBtn = document.getElementById('introEnterBtn');
+  const app = document.getElementById('app');
+  if (!introScreen || !enterBtn) return;
+
+  enterBtn.addEventListener('click', () => {
+    stopIntroSpeech();
+    introScreen.classList.add('hidden');
+    app.classList.remove('hidden');
+    initGame();
+  });
+}
+
+function initGame() {
   try {
     if (typeof initPartSprites === 'function') {
       initPartSprites();
     }
     initCanvas();
     updateMoney();
+    updateLivesDisplay();
+    updateScoreDisplay();
     renderGarage();
     renderArena();
     renderShop();
     initNavigation();
     initArena();
+    initGameOver();
     console.log('Game initialized successfully');
   } catch (error) {
     console.error('Error during initialization:', error);
   }
+}
+
+// —— Start
+function init() {
+  initStartScreen();
+  initIntro();
 }
 
 // Warte bis DOM vollständig geladen ist

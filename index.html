@@ -10,12 +10,46 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="app">
+  <!-- START SCREEN -->
+  <div id="startScreen" class="start-screen">
+    <h1 class="start-title">MECH ARENA</h1>
+    <button class="start-btn" id="startBtn">START</button>
+  </div>
+
+  <!-- INTRO SCREEN -->
+  <div id="introScreen" class="intro-screen hidden">
+    <div class="intro-bg"></div>
+    <div class="intro-content">
+      <h1 class="intro-title">MECH ARENA</h1>
+      <div class="intro-crawl-container">
+        <div class="intro-crawl" id="introCrawl">
+          <p>Im Jahr 2187 verstummten die Maschinen.</p>
+          <p>Der Große Kurzschluss löschte jede KI auf der Erde aus. Fabriken standen still. Städte zerfielen. Die Menschheit fiel zurück in die Dunkelheit.</p>
+          <p>Aber in den Ruinen von Sektor 7 fand ein Junge etwas im Schutt — einen vergessenen Kampfroboter, halb begraben unter Stahl und Asche. Kalt. Leblos. Zerbrochen.</p>
+          <p>Nächtelang schraubte er. Verdrahtete. Programmierte. Bis eines Morgens ein blaues Licht in der Brust der Maschine aufflackerte.</p>
+          <p>Sie nannten ihn verrückt. Einen Träumer. Einen Niemand.</p>
+          <p>Doch die Arena kümmert sich nicht um Namen. In der Arena zählt nur eines:</p>
+          <p class="intro-highlight">Wer zuletzt steht, gewinnt.</p>
+          <p>Baue deinen Mech. Betritt die Arena. Werde zur Legende.</p>
+        </div>
+      </div>
+      <button class="intro-enter-btn" id="introEnterBtn">ARENA BETRETEN</button>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
     <header class="header">
       <h1 class="logo">MECH ARENA</h1>
-      <div class="credits">
-        <span class="credits-icon">⚡</span>
-        <span id="money">0</span> Credits
+      <div class="header-stats">
+        <div class="credits">
+          <span class="credits-icon">⚡</span>
+          <span id="money">0</span> Credits
+        </div>
+        <div class="header-score">
+          <span class="score-label">Score:</span>
+          <span id="scoreDisplay">0</span>
+        </div>
+        <div class="header-lives" id="livesDisplay">❤❤❤</div>
       </div>
       <nav class="nav">
         <button class="nav-btn active" data-screen="garage">Garage</button>
@@ -102,6 +136,11 @@
         <div class="arena-status" id="arenaStatus">
           <p>Wähle einen Gegner aus der Liste.</p>
         </div>
+        <div class="arena-mode-select">
+          <label>Kampfmodus:</label>
+          <button class="mode-btn active" data-mode="1v1" id="mode1v1">1 vs 1</button>
+          <button class="mode-btn" data-mode="1v3" id="mode1v3">1 vs 3</button>
+        </div>
         <div class="arena-actions">
           <button class="btn btn-primary" id="btnFight">Kampf starten</button>
           <button class="btn btn-secondary" id="btnNextOpponent">Nächster Gegner</button>
@@ -145,6 +184,28 @@
     <canvas id="fightCanvas"></canvas>
     <div class="controls-hint fight-controls" id="fightControlsHint">
       <p>↑↓←→ Bewegen · Leertaste Schießen · ESC Zurück</p>
+    </div>
+  </div>
+
+  <!-- GAME OVER / HIGHSCORE SCREEN -->
+  <div id="gameOverScreen" class="gameover-screen hidden">
+    <div class="gameover-bg"></div>
+    <div class="gameover-content">
+      <h1 class="gameover-title">GAME OVER</h1>
+      <div class="gameover-score">
+        <p class="gameover-score-label">Dein Score</p>
+        <p class="gameover-score-value" id="finalScore">0</p>
+      </div>
+      <div class="gameover-name-input">
+        <label for="playerNameInput">Dein Name:</label>
+        <input type="text" id="playerNameInput" maxlength="16" placeholder="Pilot-Name" autocomplete="off">
+        <button class="gameover-save-btn" id="saveScoreBtn">EINTRAGEN</button>
+      </div>
+      <div class="gameover-highscores">
+        <h2>BESTENLISTE</h2>
+        <ol class="highscore-list" id="highscoreList"></ol>
+      </div>
+      <button class="gameover-restart-btn" id="restartBtn">NEUES SPIEL</button>
     </div>
   </div>
 

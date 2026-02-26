@@ -748,9 +748,9 @@ function initPartSprites() {
   console.log('Part sprites initialized:', Object.keys(partSprites.top).length, 'top,', Object.keys(partSprites.side).length, 'side,', enemySprites.length, 'enemies');
 }
 
-// Zeichnet den Spieler-Mech aus Layern (top-down)
-function drawPlayerMechLayered(ctx, x, y, angle, size) {
-  const equipped = state.equipped;
+// Zeichnet den Spieler-Mech aus Layern (top-down), optional mit Farbtönung (z.B. rot für Mech 2)
+function drawPlayerMechLayered(ctx, x, y, angle, size, tintColor) {
+  const equipped = state.robots[state.activeRobotIndex]?.equipped || state.robots[0].equipped;
   const scale = size / 32; // Skalierung relativ zur Standard-Größe
 
   ctx.save();
@@ -766,6 +766,14 @@ function drawPlayerMechLayered(ctx, x, y, angle, size) {
       ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
     }
   });
+
+  // Zweiter Mech: rote Farbtönung (wenn rote Farbe übergeben)
+  if (tintColor && tintColor === '#ff4757') {
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = 'rgba(255, 71, 87, 0.9)';
+    ctx.fillRect(-100, -100, 200, 200);
+    ctx.globalCompositeOperation = 'source-over';
+  }
 
   ctx.restore();
 }
@@ -790,7 +798,7 @@ function drawGaragePreview(targetCanvas) {
   const gc = targetCanvas.getContext('2d');
   gc.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
 
-  const equipped = state.equipped;
+  const equipped = state.robots[state.activeRobotIndex]?.equipped || state.robots[0].equipped;
   const layers = [equipped.chassis, equipped.armor, equipped.weaponL];
 
   layers.forEach((partId) => {
@@ -799,4 +807,12 @@ function drawGaragePreview(targetCanvas) {
       gc.drawImage(sprite, 0, 0, targetCanvas.width, targetCanvas.height);
     }
   });
+
+  // Zweiter Mech: rote Farbtönung in der Garage
+  if (state.activeRobotIndex === 1) {
+    gc.globalCompositeOperation = 'source-atop';
+    gc.fillStyle = 'rgba(255, 71, 87, 0.9)';
+    gc.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+    gc.globalCompositeOperation = 'source-over';
+  }
 }
