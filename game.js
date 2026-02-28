@@ -20,19 +20,78 @@ const PARTS_CATALOG = [
 const WEAPON_UPGRADE_PRICE = 250;
 const MAX_SHOTS_PER_GUN = 3;
 
-// —— Story Mode: 10 Kapitel mit fixen Gegnern und Hindernis-Themen (stärkere Gegner)
-const STORY_CHAPTERS = [
-  { text: 'Kapitel 1: Deine erste Prüfung in der Arena. Ein einfacher Gegner erwartet dich.', obstacleTheme: { colors: ['#3a4555', '#4a5568'], sizeRange: { minW: 25, maxW: 45, minH: 20, maxH: 40 } }, opponents: [{ name: 'Rost-Bot', hp: 95, armor: 55, damage: 26, speed: 8, weaponId: 'weapon_cannon', strategy: 'aggressive', shotCooldown: 520, reward: 400 }] },
-  { text: 'Kapitel 2: Die Konkurrenz wird härter. Ein erfahrener Kämpfer stellt sich dir.', obstacleTheme: { colors: ['#4a3a35', '#5a4a45'], sizeRange: { minW: 28, maxW: 50, minH: 22, maxH: 45 } }, opponents: [{ name: 'Scrap-King', hp: 115, armor: 75, damage: 32, speed: 9, weaponId: 'weapon_cannon', strategy: 'aggressive', shotCooldown: 480, reward: 500 }] },
-  { text: 'Kapitel 3: Du hast dich bewiesen. Jetzt kommt ein besser ausgerüsteter Gegner.', obstacleTheme: { colors: ['#2a4a3a', '#3a5a4a'], sizeRange: { minW: 30, maxW: 55, minH: 25, maxH: 50 } }, opponents: [{ name: 'Stahl-Wolf', hp: 135, armor: 95, damage: 40, speed: 10, weaponId: 'weapon_plasma', strategy: 'defensive', shotCooldown: 440, reward: 600 }] },
-  { text: 'Kapitel 4: Zwei Gegner gleichzeitig. Nutze die Hindernisse zu deinem Vorteil.', obstacleTheme: { colors: ['#4a3545', '#5a4555'], sizeRange: { minW: 32, maxW: 58, minH: 28, maxH: 52 } }, opponents: [{ name: 'Blitz-Bot', hp: 105, armor: 65, damage: 36, speed: 11, weaponId: 'weapon_plasma', strategy: 'evasive', shotCooldown: 400, reward: 400 }, { name: 'Vulkan', hp: 125, armor: 85, damage: 42, speed: 9, weaponId: 'weapon_cannon', strategy: 'aggressive', shotCooldown: 430, reward: 600 }] },
-  { text: 'Kapitel 5: Die Arena wird gefährlicher. Zwei starke Gegner warten auf dich.', obstacleTheme: { colors: ['#5a4030', '#6a5040'], sizeRange: { minW: 35, maxW: 60, minH: 30, maxH: 55 } }, opponents: [{ name: 'Titan-X', hp: 155, armor: 115, damage: 48, speed: 9, weaponId: 'weapon_railgun', strategy: 'defensive', shotCooldown: 380, reward: 700 }, { name: 'Nova', hp: 130, armor: 80, damage: 44, speed: 11, weaponId: 'weapon_plasma', strategy: 'flanker', shotCooldown: 390, reward: 600 }] },
-  { text: 'Kapitel 6: Drei Gegner. Du musst taktisch vorgehen.', obstacleTheme: { colors: ['#3a3a5a', '#4a4a6a'], sizeRange: { minW: 38, maxW: 62, minH: 32, maxH: 58 } }, opponents: [{ name: 'Shadow-Mech', hp: 110, armor: 70, damage: 40, speed: 12, weaponId: 'weapon_minigun', strategy: 'evasive', shotCooldown: 350, reward: 400 }, { name: 'Iron-Fist', hp: 145, armor: 105, damage: 52, speed: 9, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 360, reward: 600 }, { name: 'Pulsar', hp: 125, armor: 85, damage: 48, speed: 10, weaponId: 'weapon_plasma', strategy: 'flanker', shotCooldown: 370, reward: 500 }] },
-  { text: 'Kapitel 7: Die Elite der Arena. Drei erfahrene Kämpfer.', obstacleTheme: { colors: ['#4a2a3a', '#5a3a4a'], sizeRange: { minW: 40, maxW: 65, minH: 35, maxH: 60 } }, opponents: [{ name: 'Elite Alpha', hp: 170, armor: 125, damage: 58, speed: 10, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 330, reward: 600 }, { name: 'Elite Beta', hp: 150, armor: 110, damage: 54, speed: 11, weaponId: 'weapon_plasma', strategy: 'evasive', shotCooldown: 340, reward: 550 }, { name: 'Elite Gamma', hp: 135, armor: 95, damage: 50, speed: 12, weaponId: 'weapon_minigun', strategy: 'flanker', shotCooldown: 335, reward: 500 }] },
-  { text: 'Kapitel 8: Fast am Ziel. Die härtesten Kämpfer der Liga.', obstacleTheme: { colors: ['#2a2a4a', '#3a3a5a'], sizeRange: { minW: 42, maxW: 68, minH: 38, maxH: 62 } }, opponents: [{ name: 'Champion X', hp: 185, armor: 140, damage: 65, speed: 10, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 310, reward: 700 }, { name: 'Champion Y', hp: 165, armor: 125, damage: 60, speed: 11, weaponId: 'weapon_plasma', strategy: 'defensive', shotCooldown: 320, reward: 650 }, { name: 'Champion Z', hp: 145, armor: 105, damage: 56, speed: 12, weaponId: 'weapon_minigun', strategy: 'evasive', shotCooldown: 315, reward: 600 }] },
-  { text: 'Kapitel 9: Das Halbfinale. Nur die Besten überleben.', obstacleTheme: { colors: ['#5a3a2a', '#6a4a3a'], sizeRange: { minW: 45, maxW: 70, minH: 40, maxH: 65 } }, opponents: [{ name: 'Finalist A', hp: 200, armor: 155, damage: 72, speed: 11, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 290, reward: 800 }, { name: 'Finalist B', hp: 180, armor: 135, damage: 68, speed: 12, weaponId: 'weapon_plasma', strategy: 'evasive', shotCooldown: 300, reward: 750 }, { name: 'Finalist C', hp: 160, armor: 120, damage: 62, speed: 13, weaponId: 'weapon_minigun', strategy: 'flanker', shotCooldown: 295, reward: 700 }] },
-  { text: 'Kapitel 10: Das Finale. Nur einer kann gewinnen. Zeig, was du draufhast!', obstacleTheme: { colors: ['#1a1a2a', '#2a2a3a'], sizeRange: { minW: 50, maxW: 75, minH: 45, maxH: 70 } }, opponents: [{ name: 'Arena-Lord', hp: 220, armor: 175, damage: 82, speed: 11, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 270, reward: 1000 }, { name: 'Stahl-Titan', hp: 200, armor: 165, damage: 75, speed: 10, weaponId: 'weapon_plasma', strategy: 'defensive', shotCooldown: 280, reward: 900 }, { name: 'Blitz-Lord', hp: 185, armor: 140, damage: 70, speed: 13, weaponId: 'weapon_minigun', strategy: 'evasive', shotCooldown: 265, reward: 800 }] },
+// —— Story Mode: 90 Kapitel (skalierend generiert)
+const STORY_CHAPTER_COUNT = 90;
+const STORY_NAMES = [
+  'Rost-Bot', 'Scrap-King', 'Stahl-Wolf', 'Blitz-Bot', 'Vulkan',
+  'Titan-X', 'Nova', 'Shadow-Mech', 'Iron-Fist', 'Pulsar',
+  'Aegis', 'Drifter', 'Warden', 'Raptor', 'Helios'
 ];
+
+function getStoryObstacleTheme(chapter) {
+  if (chapter > 30) {
+    return {
+      colors: ['#1f4a2e', '#2f6a40', '#3e8a55'],
+      sizeRange: { minW: 30, maxW: 70, minH: 24, maxH: 62 },
+    };
+  }
+  const presets = [
+    { colors: ['#3a4555', '#4a5568'], sizeRange: { minW: 25, maxW: 45, minH: 20, maxH: 40 } },
+    { colors: ['#4a3a35', '#5a4a45'], sizeRange: { minW: 28, maxW: 50, minH: 22, maxH: 45 } },
+    { colors: ['#2a4a3a', '#3a5a4a'], sizeRange: { minW: 30, maxW: 55, minH: 25, maxH: 50 } },
+    { colors: ['#4a3545', '#5a4555'], sizeRange: { minW: 32, maxW: 58, minH: 28, maxH: 52 } },
+    { colors: ['#3a3a5a', '#4a4a6a'], sizeRange: { minW: 35, maxW: 60, minH: 30, maxH: 55 } },
+  ];
+  return presets[(chapter - 1) % presets.length];
+}
+
+function generateStoryChapters(total = STORY_CHAPTER_COUNT) {
+  const chapters = [];
+  for (let chapter = 1; chapter <= total; chapter++) {
+    const phase = chapter <= 30 ? 0 : chapter <= 60 ? 1 : 2;
+    const isBoss = chapter % 10 === 0;
+    const enemyCount = isBoss ? (chapter >= 40 ? 3 : 2) : (chapter > 60 ? 3 : chapter > 20 ? 2 : 1);
+    const opponents = [];
+    for (let i = 0; i < enemyCount; i++) {
+      const spread = i - (enemyCount - 1) / 2;
+      const eliteMult = isBoss ? 1.1 : 1;
+      const roleMult = phase === 0 ? 0.9 : phase === 1 ? 1.0 : 1.12;
+      const mult = Math.max(0.78, roleMult * eliteMult + spread * 0.03);
+      const hp = Math.round((66 + chapter * 2.55) * mult + (isBoss ? 24 : 0));
+      const armor = Math.round((38 + chapter * 1.95) * mult + (isBoss ? 14 : 0));
+      const damage = Math.round((19 + chapter * 0.88) * mult + (isBoss ? 5 : 0));
+      const speed = Math.max(6, Math.round((6 + chapter * 0.045) + (phase === 2 ? 1 : 0) - spread * 0.35));
+      const reward = Math.round((320 + chapter * 30) * (isBoss ? 1.3 : 1) + i * 40);
+      const weaponIds = ['weapon_cannon', 'weapon_plasma', 'weapon_railgun', 'weapon_minigun'];
+      const weaponId = weaponIds[(chapter + i) % weaponIds.length];
+      const strategies = ['aggressive', 'defensive', 'evasive', 'flanker'];
+      const strategy = strategies[(chapter + i * 2) % strategies.length];
+      const shotCooldown = Math.max(320, Math.round(680 - chapter * 2.3 - i * 15 - (isBoss ? 20 : 0)));
+      opponents.push({
+        name: `${STORY_NAMES[(chapter + i) % STORY_NAMES.length]} ${chapter}-${i + 1}`,
+        hp,
+        armor,
+        damage,
+        speed,
+        weaponId,
+        strategy,
+        shotCooldown,
+        reward,
+      });
+    }
+    const chapterText = isBoss
+      ? `Kapitel ${chapter}: Bosskampf. Harte Formation mit Elite-Mechs.`
+      : `Kapitel ${chapter}: Gegnerwelle in ${phase === 0 ? 'Sektor Blau' : phase === 1 ? 'Sektor Grün' : 'Sektor Zenith'}.`;
+    chapters.push({
+      text: chapterText,
+      obstacleTheme: getStoryObstacleTheme(chapter),
+      opponents,
+    });
+  }
+  return chapters;
+}
+
+const STORY_CHAPTERS = generateStoryChapters();
 
 // —— Spieler-Stand
 const INITIAL_STATE = {
@@ -627,17 +686,17 @@ function generateOpponents() {
   ];
   difficulties.forEach((diff, idx) => {
     const baseName = names[idx % names.length];
-    const power = Math.max(35, myPower * (diff.powerMult + (Math.random() - 0.5) * diff.powerVar * 2));
-    const hp = 50 + (power * 0.32) + Math.floor(Math.random() * 30);
-    const armor = 2 * (15 + (power * 0.12) + Math.floor(Math.random() * 18));
-    const damage = 16 + (power * 0.16) + Math.floor(Math.random() * 16);
+    const power = Math.max(30, myPower * (diff.powerMult + (Math.random() - 0.5) * diff.powerVar * 2) * 0.9);
+    const hp = 45 + (power * 0.28) + Math.floor(Math.random() * 24);
+    const armor = 2 * (12 + (power * 0.1) + Math.floor(Math.random() * 14));
+    const damage = 14 + (power * 0.13) + Math.floor(Math.random() * 12);
     const speed = Math.round((5 + Math.floor(Math.random() * 8)) * (diff.level === 'easy' ? 1.0 : diff.level === 'medium' ? 1.1 : 1.15));
     const reward = Math.round((60 + power * 0.5) * diff.rewardMult + Math.random() * 40);
     const weaponIds = ['weapon_cannon', 'weapon_plasma', 'weapon_railgun', 'weapon_minigun'];
     const weaponId = weaponIds[Math.floor(Math.random() * weaponIds.length)];
     const strategies = ['aggressive', 'defensive', 'evasive', 'flanker'];
     const strategy = strategies[Math.floor(Math.random() * strategies.length)];
-    const baseCooldown = diff.level === 'easy' ? 450 : diff.level === 'medium' ? 400 : 350;
+    const baseCooldown = diff.level === 'easy' ? 540 : diff.level === 'medium' ? 480 : 430;
     const shotCooldown = Math.round(baseCooldown * diff.shotMult + Math.random() * 80);
     list.push({
       name: baseName + ' #' + (idx + 1),
@@ -662,6 +721,7 @@ function renderArena() {
     const opponentSelect = document.getElementById('opponentSelect');
     const mode1v1 = document.getElementById('mode1v1');
     const mode1v3 = document.getElementById('mode1v3');
+    const mode2v2 = document.getElementById('mode2v2');
     const modeSelect = document.querySelector('.arena-mode-select');
     const btnFight = document.getElementById('btnFight');
     const btnNextOpponent = document.getElementById('btnNextOpponent');
@@ -695,18 +755,30 @@ function renderArena() {
 
     if (modeSelect) modeSelect.style.display = '';
     if (btnNextOpponent) btnNextOpponent.style.display = '';
-    if (mode1v1 && mode1v3) {
+    if (mode1v1 && mode1v3 && mode2v2) {
       mode1v1.classList.toggle('active', state.arenaMode === '1v1');
       mode1v3.classList.toggle('active', state.arenaMode === '1v3');
+      mode2v2.classList.toggle('active', state.arenaMode === '2v2');
       mode1v1.onclick = () => { state.arenaMode = '1v1'; renderArena(); };
       mode1v3.onclick = () => { state.arenaMode = '1v3'; renderArena(); };
+      mode2v2.onclick = () => { state.arenaMode = '2v2'; renderArena(); };
     }
 
-    if (state.arenaMode === '1v3') {
+    if (state.arenaMode === '1v3' || state.arenaMode === '2v2') {
       if (opponentSelect) opponentSelect.style.display = 'none';
       if (btnFight) btnFight.disabled = false;
       const arenaStatusEl = document.getElementById('arenaStatus');
-      if (arenaStatusEl) arenaStatusEl.innerHTML = '<p>1 vs 3 — Kampf gegen 3 Gegner. Klicke "Kampf starten".</p>';
+      const enemyNameEl = document.getElementById('enemyName');
+      const enemyHpTextEl = document.getElementById('enemyHpText');
+      const enemyHpBarEl = document.getElementById('enemyHpBar');
+      if (arenaStatusEl) {
+        arenaStatusEl.innerHTML = state.arenaMode === '1v3'
+          ? '<p>1 vs 3 — Kampf gegen 3 Gegner. Klicke "Kampf starten".</p>'
+          : '<p>2 vs 2 — Du und ein KI-Verbündeter gegen 2 Gegner. Klicke "Kampf starten".</p>';
+      }
+      if (enemyNameEl) enemyNameEl.textContent = state.arenaMode === '1v3' ? '3 Gegner' : '2 Gegner';
+      if (enemyHpTextEl) enemyHpTextEl.textContent = '— / —';
+      if (enemyHpBarEl) enemyHpBarEl.style.width = '100%';
     } else {
       if (opponentSelect) opponentSelect.style.display = 'block';
     }
@@ -809,6 +881,7 @@ let canvas, ctx;
 
 let gameState = {
   player: null,
+  ally: null,
   enemies: [],
   projectiles: [],
   mines: [],
@@ -866,6 +939,7 @@ function hideFightOverlay() {
 
 function updateHud() {
   const p = gameState.player;
+  const ally = gameState.ally;
   const enemies = gameState.enemies;
   if (p) {
     const bar = document.getElementById('hudPlayerHp');
@@ -1178,6 +1252,7 @@ function updatePlayer() {
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   
   const p = gameState.player;
+  if (!p || p.hp <= 0) return;
   const stats = computeRobotStats();
   const maxSpeed = stats.speed * 0.18;  // Roboter langsamer als Schüsse (projSpeed 4.5)
   const acceleration = 0.08;
@@ -1321,16 +1396,96 @@ function updatePlayer() {
   }
 }
 
+function updateAlly() {
+  if (state.arenaMode !== '2v2' || gameState.countdown > 0 || gameState.fightEnded) return;
+  const a = gameState.ally;
+  if (!a || a.hp <= 0) return;
+
+  const enemies = gameState.enemies.filter((e) => e.hp > 0);
+  if (enemies.length === 0) return;
+
+  let target = enemies[0];
+  let bestDist = Infinity;
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    const d = Math.hypot(e.x - a.x, e.y - a.y);
+    if (d < bestDist) {
+      bestDist = d;
+      target = e;
+    }
+  }
+
+  const maxSpeed = (a.speed || 9) * 0.32;
+  const acceleration = 0.1;
+  const friction = 0.97;
+  const dx = target.x - a.x;
+  const dy = target.y - a.y;
+  const targetAngle = Math.atan2(dy, dx);
+  let diff = targetAngle - a.angle;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  a.angle += diff * 0.06;
+
+  if (a.vx === undefined) a.vx = 0;
+  if (a.vy === undefined) a.vy = 0;
+  if (a.thrust === undefined) a.thrust = 0;
+
+  let moveStrength = bestDist > 95 ? 0.95 : bestDist > 65 ? 0.6 : -0.2;
+  a.vx += Math.cos(a.angle) * acceleration * maxSpeed * moveStrength;
+  a.vy += Math.sin(a.angle) * acceleration * maxSpeed * moveStrength;
+  const speed = Math.hypot(a.vx, a.vy);
+  if (speed > maxSpeed) {
+    a.vx = (a.vx / speed) * maxSpeed;
+    a.vy = (a.vy / speed) * maxSpeed;
+  }
+  a.vx *= friction;
+  a.vy *= friction;
+  a.x += a.vx;
+  a.y += a.vy;
+  if (a.x < 0) a.x += canvas.width;
+  if (a.x > canvas.width) a.x -= canvas.width;
+  if (a.y < 0) a.y += canvas.height;
+  if (a.y > canvas.height) a.y -= canvas.height;
+  for (let i = 0; i < gameState.obstacles.length; i++) {
+    const obs = gameState.obstacles[i];
+    if (circleRectCollision(a.x, a.y, 14, obs.x, obs.y, obs.w, obs.h)) {
+      resolveObstacleCollision(a, 14, obs);
+    }
+  }
+
+  a.thrust += ((Math.min(Math.hypot(a.vx, a.vy) / Math.max(0.1, maxSpeed) + 0.2, 1)) - a.thrust) * 0.12;
+
+  const now = Date.now();
+  if (!a.lastShot) a.lastShot = 0;
+  if (now - a.lastShot > 300) {
+    a.lastShot = now;
+    const weaponId = getEquippedParts().weapon?.id || 'weapon_cannon';
+    const dmg = Math.max(12, Math.round((gameState.playerStats?.damage || 30) * 1.05));
+    gameState.projectiles.push({
+      x: a.x + Math.cos(a.angle) * 18,
+      y: a.y + Math.sin(a.angle) * 18,
+      vx: Math.cos(a.angle) * 4.2,
+      vy: Math.sin(a.angle) * 4.2,
+      damage: dmg,
+      owner: 'ally',
+      weaponId,
+      color: '#44aaff',
+      totalDist: 0,
+    });
+  }
+}
+
 function updateEnemies() {
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   
   const p = gameState.player;
+  const ally = gameState.ally;
   if (!p) return;
   
   gameState.enemies.forEach((e, eIdx) => {
     if (e.hp <= 0) return;
   
-  const maxSpeed = e.speed * 0.38;  // 10% langsamer als vorher (0.42 * 0.9)
+  const maxSpeed = e.speed * 0.34;
   const acceleration = 0.12;       // Schnellere Reaktion
   const friction = 0.97;
   if (e.thrust === undefined) e.thrust = 0;
@@ -1387,11 +1542,14 @@ function updateEnemies() {
     e._phaseUntil = now + (e._phase === 'attack' ? durations.attack : durations.defend);
   }
   
-  // Ziel wählen: Spieler oder (in 1v3) zufällig auch andere Gegner – häufiger wechseln
+  // Ziel wählen: Spieler/Ally oder (in 1v3) zufällig auch andere Gegner
   const is1v3 = state.arenaMode === '1v3';
   if (e._targetSwitchAt === undefined || now > e._targetSwitchAt) {
     e._targetSwitchAt = now + 1200 + Math.random() * 1800;
     const targets = [{ player: true }];
+    if (state.arenaMode === '2v2' && ally && ally.hp > 0) {
+      targets.push({ ally: true });
+    }
     if (is1v3) {
       gameState.enemies.forEach((other, oIdx) => {
         if (oIdx !== eIdx && other.hp > 0) targets.push({ player: false, idx: oIdx });
@@ -1399,10 +1557,14 @@ function updateEnemies() {
     }
     const t = targets[Math.floor(Math.random() * targets.length)];
     e._targetPlayer = t.player;
+    e._targetAlly = !!t.ally;
     e._targetEnemyIdx = t.idx;
   }
   let targetX, targetY;
-  if (e._targetPlayer) {
+  if (e._targetAlly && ally && ally.hp > 0) {
+    targetX = ally.x;
+    targetY = ally.y;
+  } else if (e._targetPlayer && p.hp > 0) {
     targetX = p.x;
     targetY = p.y;
   } else if (e._targetEnemyIdx !== undefined) {
@@ -1415,8 +1577,9 @@ function updateEnemies() {
       targetY = p.y;
     }
   } else {
-    targetX = p.x;
-    targetY = p.y;
+    const fallback = (ally && ally.hp > 0) ? ally : p;
+    targetX = fallback.x;
+    targetY = fallback.y;
   }
   const dist = wrapDist(e.x, e.y, targetX, targetY);
   
@@ -1557,13 +1720,13 @@ function updateEnemies() {
     playRocketSound();
   }
 
-  const shotCooldown = e.shotCooldown ?? 520;
+  const shotCooldown = e.shotCooldown ?? 620;
   if (now - (e.lastShot || 0) > shotCooldown) {
     e.lastShot = now;
     playShotSound();
     const projSpeed = 3.8;
     const weaponId = e.weaponId || 'weapon_cannon';
-    const count = e.shotsPerVolley ?? (Math.random() < 0.35 ? 2 : 1);
+    const count = e.shotsPerVolley ?? (Math.random() < 0.2 ? 2 : 1);
     const dmgPerProj = e.damage;
     const spreadAngle = 0.08;
     for (let i = 0; i < count; i++) {
@@ -1791,9 +1954,19 @@ function getAliveEnemiesCount() {
   return gameState.enemies.filter((x) => x.hp > 0).length;
 }
 
+function hasLivingAlly() {
+  return state.arenaMode === '2v2' && gameState.ally && gameState.ally.hp > 0;
+}
+
+function isPlayerTeamDefeated() {
+  const pAlive = gameState.player && gameState.player.hp > 0;
+  return !pAlive && !hasLivingAlly();
+}
+
 function updateMines() {
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   const p = gameState.player;
+  const ally = gameState.ally;
   const enemies = gameState.enemies;
   const stats = gameState.playerStats || computeRobotStats();
   const minesToRemove = [];
@@ -1816,7 +1989,22 @@ function updateMines() {
       p.hp -= dmg;
       spawnExplosion(mine.x, mine.y, '#ffaa00', 14);
       playMineExplosionSound();
-      if (p.hp <= 0) endFight(false);
+      if (isPlayerTeamDefeated()) endFight(false);
+      continue;
+    }
+
+    if (isArmed && ally && ally.hp > 0 && distTo(ally.x, ally.y) < hitRadius) {
+      minesToRemove.push(mine);
+      if (Date.now() < (ally.shieldUntil || 0)) {
+        spawnExplosion(mine.x, mine.y, '#ffaa00', 12);
+        playMineExplosionSound();
+        continue;
+      }
+      const dmg = Math.max(1, Math.floor(MINE_DAMAGE - (ally.armor || 0) / 2));
+      ally.hp -= dmg;
+      spawnExplosion(mine.x, mine.y, '#ffaa00', 14);
+      playMineExplosionSound();
+      if (isPlayerTeamDefeated()) endFight(false);
       continue;
     }
 
@@ -1866,6 +2054,7 @@ function spawnMeteorStorm(now = Date.now()) {
       size: 10 + Math.random() * 6,
       rot: Math.random() * Math.PI * 2,
       spin: (Math.random() * 0.06 + 0.02) * (Math.random() < 0.5 ? -1 : 1),
+      spawnedAt: now,
       radius: METEOR_ZONE_RADIUS,
       impactAt: now + METEOR_WARNING_MS,
     });
@@ -1875,6 +2064,7 @@ function spawnMeteorStorm(now = Date.now()) {
 function updateMeteorStorms() {
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   const now = Date.now();
+  const ally = gameState.ally;
 
   if (!gameState.nextMeteorStormAt) scheduleNextMeteorStorm(now);
   if (gameState.meteorWarnings.length === 0 && now >= gameState.nextMeteorStormAt) {
@@ -1890,14 +2080,23 @@ function updateMeteorStorms() {
   const enemies = gameState.enemies;
   due.forEach((zone) => {
     const r2 = zone.radius * zone.radius;
-    spawnExplosion(zone.x, zone.y, '#ff8844', 20);
+    spawnExplosion(zone.x, zone.y, '#ff8844', 10);
 
     if (p && p.hp > 0) {
       const dx = p.x - zone.x;
       const dy = p.y - zone.y;
       if (dx * dx + dy * dy <= r2) {
         p.hp -= METEOR_DAMAGE;
-        if (p.hp <= 0) endFight(false);
+        if (isPlayerTeamDefeated() && !gameState.fightEnded) endFight(false);
+      }
+    }
+
+    if (ally && ally.hp > 0) {
+      const dx = ally.x - zone.x;
+      const dy = ally.y - zone.y;
+      if (dx * dx + dy * dy <= r2) {
+        ally.hp -= METEOR_DAMAGE;
+        if (isPlayerTeamDefeated() && !gameState.fightEnded) endFight(false);
       }
     }
 
@@ -1912,7 +2111,7 @@ function updateMeteorStorms() {
           if (e.hp <= 0) triggerEnemyDeathExplosion(e);
         }
       }
-      if (getAliveEnemiesCount() === 0) endFight(true);
+      if (getAliveEnemiesCount() === 0 && !gameState.fightEnded) endFight(true);
     }
   });
 
@@ -1927,6 +2126,7 @@ function updateProjectiles() {
   
   const stats = gameState.playerStats || computeRobotStats();
   const p = gameState.player;
+  const ally = gameState.ally;
   const enemies = gameState.enemies;
   
   // 1. Raketen: Homing (begrenzter Kurvenradius)
@@ -1998,6 +2198,7 @@ function updateProjectiles() {
     for (let j = i + 1; j < projs.length; j++) {
       if (projToRemove.has(projs[j])) continue;
       if (projs[i].type === 'rocket' || projs[j].type === 'rocket') continue; // Schüsse treffen Raketen nicht
+      if ((projs[i].owner === 'player' || projs[i].owner === 'ally') && (projs[j].owner === 'player' || projs[j].owner === 'ally')) continue;
       if (projs[i].owner === projs[j].owner) continue; // Eigene Schüsse zerstören sich nicht
       const dx = projs[i].x - projs[j].x;
       const dy = projs[i].y - projs[j].y;
@@ -2039,9 +2240,26 @@ function updateProjectiles() {
         p.hp -= dmg;
         spawnExplosion(proj.x, proj.y, '#ff4757', 12);
         updatePlayerHp(p.hp, p.maxHp);
-        if (p.hp <= 0) {
+        if (isPlayerTeamDefeated()) {
           endFight(false);
         }
+        return false;
+      }
+    }
+
+    if (proj.owner === 'enemy' && ally && ally.hp > 0) {
+      const dx = proj.x - ally.x;
+      const dy = proj.y - ally.y;
+      if (dx * dx + dy * dy < 225) {
+        if (proj.type === 'rocket') playRocketExplosionSound();
+        if (Date.now() < (ally.shieldUntil || 0)) {
+          spawnExplosion(proj.x, proj.y, '#44aaff', 8);
+          return false;
+        }
+        const dmg = Math.max(1, Math.floor(proj.damage - (ally.armor || 0) / 2));
+        ally.hp -= dmg;
+        spawnExplosion(proj.x, proj.y, '#ff4757', 12);
+        if (isPlayerTeamDefeated()) endFight(false);
         return false;
       }
     }
@@ -2071,7 +2289,7 @@ function updateProjectiles() {
       }
     }
     
-    if (proj.owner === 'player' && enemies) {
+    if ((proj.owner === 'player' || proj.owner === 'ally') && enemies) {
       for (let i = 0; i < enemies.length; i++) {
         const e = enemies[i];
         if (e.hp <= 0) continue;
@@ -2102,10 +2320,11 @@ function updateProjectiles() {
 }
 
 function render() {
-  ctx.fillStyle = '#0a0e14';
+  const isGreenStoryArena = state.storyMode && state.storyChapter > 30;
+  ctx.fillStyle = isGreenStoryArena ? '#0f2417' : '#0a0e14';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  ctx.strokeStyle = '#1a2433';
+  ctx.strokeStyle = isGreenStoryArena ? '#2b5c3a' : '#1a2433';
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let i = 0; i <= canvas.width; i += 80) {
@@ -2191,7 +2410,7 @@ function render() {
     const my = zone.startY + (zone.y - zone.startY) * progress;
     const sx = zone.size || 12;
     const travelAngle = Math.atan2(zone.y - zone.startY, zone.x - zone.startX);
-    const ang = (zone.rot || 0) + now * (zone.spin || 0.03);
+    const ang = (zone.rot || 0) + (now - (zone.spawnedAt || now)) * (zone.spin || 0.03);
     const tailLen = 26 + sx * 1.8 + (1 - t) * 16;
 
     ctx.setLineDash([]);
@@ -2203,17 +2422,8 @@ function render() {
     ctx.lineTo(mx - Math.cos(travelAngle) * sx * 0.6, my - Math.sin(travelAngle) * sx * 0.6);
     ctx.stroke();
 
-    const fireGrad = ctx.createLinearGradient(
-      mx - Math.cos(travelAngle) * tailLen,
-      my - Math.sin(travelAngle) * tailLen,
-      mx,
-      my
-    );
-    fireGrad.addColorStop(0, 'rgba(255, 70, 20, 0)');
-    fireGrad.addColorStop(0.35, 'rgba(255, 110, 40, 0.45)');
-    fireGrad.addColorStop(1, 'rgba(255, 220, 120, 0.95)');
     ctx.globalAlpha = 0.95;
-    ctx.strokeStyle = fireGrad;
+    ctx.strokeStyle = 'rgba(255, 140, 60, 0.85)';
     ctx.lineWidth = sx * 0.7;
     ctx.beginPath();
     ctx.moveTo(mx - Math.cos(travelAngle) * tailLen, my - Math.sin(travelAngle) * tailLen);
@@ -2281,6 +2491,12 @@ function render() {
       drawHpBar(e.x, e.y, e.hp, e.maxHp, '#ff4757', 14);
     }
   });
+
+  if (gameState.ally && gameState.ally.hp > 0) {
+    if (Date.now() < (gameState.ally.shieldUntil || 0)) drawShieldRing(gameState.ally.x, gameState.ally.y, 20);
+    drawMech(gameState.ally.x, gameState.ally.y, gameState.ally.angle, '#44aaff', 14, true, 0, gameState.ally.thrust || 0);
+    drawHpBar(gameState.ally.x, gameState.ally.y, gameState.ally.hp, gameState.ally.maxHp, '#44aaff', 14);
+  }
   
   // Spieler
   if (gameState.player) {
@@ -2307,14 +2523,21 @@ function gameLoop() {
   }
   
   updatePlayer();
+  updateAlly();
   updateEnemies();
   
-  if (gameState.player && !gameState.fightEnded && gameState.countdown === 0) {
+  if (!gameState.fightEnded && gameState.countdown === 0) {
     gameState.enemies.forEach((e) => {
-      if (e.hp > 0 && checkCollision(gameState.player, e)) {
+      if (gameState.player?.hp > 0 && e.hp > 0 && checkCollision(gameState.player, e)) {
         resolveCollision(gameState.player, e);
       }
+      if (gameState.ally?.hp > 0 && e.hp > 0 && checkCollision(gameState.ally, e)) {
+        resolveCollision(gameState.ally, e);
+      }
     });
+    if (gameState.player?.hp > 0 && gameState.ally?.hp > 0 && checkCollision(gameState.player, gameState.ally)) {
+      resolveCollision(gameState.player, gameState.ally);
+    }
     for (let i = 0; i < gameState.enemies.length; i++) {
       for (let j = i + 1; j < gameState.enemies.length; j++) {
         const a = gameState.enemies[i];
@@ -2366,6 +2589,7 @@ function updateEnemyHp(current, max) {
 }
 
 function endFight(won) {
+  if (gameState.fightEnded) return;
   gameState.fightEnded = true;
   gameState.winner = won ? 'player' : 'enemy';
   
@@ -2392,7 +2616,7 @@ function endFight(won) {
     
     if (state.storyMode && won) {
       state.storyChapter++;
-      if (state.storyChapter > 10) {
+      if (state.storyChapter > STORY_CHAPTERS.length) {
         showHappyEnd();
       } else {
         showStoryChapter(state.storyChapter - 1);
@@ -2454,9 +2678,10 @@ function handleKeyUp(e) {
 
 function fight() {
   const is1v3 = state.arenaMode === '1v3';
+  const is2v2 = state.arenaMode === '2v2';
   const isStory = state.storyMode;
   if (state.fightInProgress) return;
-  if (!isStory && !is1v3 && !state.currentEnemy) return;
+  if (!isStory && !is1v3 && !is2v2 && !state.currentEnemy) return;
   if (isStory && !state.currentEnemies?.length) return;
   
   showFightOverlay();
@@ -2486,8 +2711,28 @@ function fight() {
     shieldUntil: 0,
   };
   gameState.playerRobotIndex = state.activeRobotIndex;
+  gameState.ally = null;
+  if (is2v2) {
+    gameState.ally = {
+      x: canvas.width * 0.26,
+      y: canvas.height * 0.62,
+      angle: 0.2,
+      hp: Math.round(playerStats.hp * 1.05),
+      maxHp: Math.round(playerStats.hp * 1.05),
+      armor: Math.round(playerStats.armor * 1.05),
+      damage: Math.round(playerStats.damage * 1.15),
+      speed: Math.max(9, Math.round(playerStats.speed * 1.02)),
+      vx: 0,
+      vy: 0,
+      thrust: 0,
+      shieldUntil: 0,
+      lastShot: 0,
+    };
+  }
   
-  const opponents = isStory ? state.currentEnemies : (is1v3 ? generateOpponents().slice(0, 3) : [state.currentEnemy]);
+  const opponents = isStory
+    ? state.currentEnemies
+    : (is1v3 ? generateOpponents().slice(0, 3) : is2v2 ? generateOpponents().slice(0, 2) : [state.currentEnemy]);
   state.currentEnemies = opponents;
   
   const posCount = opponents.length;
