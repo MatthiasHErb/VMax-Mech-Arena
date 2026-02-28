@@ -757,7 +757,7 @@ function drawPlayerMechLayered(ctx, x, y, angle, size, tintColor) {
   ctx.translate(x, y);
   ctx.rotate(angle);
 
-  const layers = [equipped.chassis, equipped.armor, equipped.weaponL];
+  const layers = [equipped.chassis, equipped.armor, equipped.weapon];
   layers.forEach((partId) => {
     const sprite = partSprites.top[partId];
     if (sprite) {
@@ -799,7 +799,7 @@ function drawGaragePreview(targetCanvas) {
   gc.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
 
   const equipped = state.robots[state.activeRobotIndex]?.equipped || state.robots[0].equipped;
-  const layers = [equipped.chassis, equipped.armor, equipped.weaponL];
+  const layers = [equipped.chassis, equipped.armor, equipped.weapon];
 
   layers.forEach((partId) => {
     const sprite = partSprites.side[partId];

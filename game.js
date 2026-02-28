@@ -20,13 +20,27 @@ const PARTS_CATALOG = [
 const WEAPON_UPGRADE_PRICE = 250;
 const MAX_SHOTS_PER_GUN = 3;
 
+// —— Story Mode: 10 Kapitel mit fixen Gegnern und Hindernis-Themen (stärkere Gegner)
+const STORY_CHAPTERS = [
+  { text: 'Kapitel 1: Deine erste Prüfung in der Arena. Ein einfacher Gegner erwartet dich.', obstacleTheme: { colors: ['#3a4555', '#4a5568'], sizeRange: { minW: 25, maxW: 45, minH: 20, maxH: 40 } }, opponents: [{ name: 'Rost-Bot', hp: 95, armor: 55, damage: 26, speed: 8, weaponId: 'weapon_cannon', strategy: 'aggressive', shotCooldown: 520, reward: 400 }] },
+  { text: 'Kapitel 2: Die Konkurrenz wird härter. Ein erfahrener Kämpfer stellt sich dir.', obstacleTheme: { colors: ['#4a3a35', '#5a4a45'], sizeRange: { minW: 28, maxW: 50, minH: 22, maxH: 45 } }, opponents: [{ name: 'Scrap-King', hp: 115, armor: 75, damage: 32, speed: 9, weaponId: 'weapon_cannon', strategy: 'aggressive', shotCooldown: 480, reward: 500 }] },
+  { text: 'Kapitel 3: Du hast dich bewiesen. Jetzt kommt ein besser ausgerüsteter Gegner.', obstacleTheme: { colors: ['#2a4a3a', '#3a5a4a'], sizeRange: { minW: 30, maxW: 55, minH: 25, maxH: 50 } }, opponents: [{ name: 'Stahl-Wolf', hp: 135, armor: 95, damage: 40, speed: 10, weaponId: 'weapon_plasma', strategy: 'defensive', shotCooldown: 440, reward: 600 }] },
+  { text: 'Kapitel 4: Zwei Gegner gleichzeitig. Nutze die Hindernisse zu deinem Vorteil.', obstacleTheme: { colors: ['#4a3545', '#5a4555'], sizeRange: { minW: 32, maxW: 58, minH: 28, maxH: 52 } }, opponents: [{ name: 'Blitz-Bot', hp: 105, armor: 65, damage: 36, speed: 11, weaponId: 'weapon_plasma', strategy: 'evasive', shotCooldown: 400, reward: 400 }, { name: 'Vulkan', hp: 125, armor: 85, damage: 42, speed: 9, weaponId: 'weapon_cannon', strategy: 'aggressive', shotCooldown: 430, reward: 600 }] },
+  { text: 'Kapitel 5: Die Arena wird gefährlicher. Zwei starke Gegner warten auf dich.', obstacleTheme: { colors: ['#5a4030', '#6a5040'], sizeRange: { minW: 35, maxW: 60, minH: 30, maxH: 55 } }, opponents: [{ name: 'Titan-X', hp: 155, armor: 115, damage: 48, speed: 9, weaponId: 'weapon_railgun', strategy: 'defensive', shotCooldown: 380, reward: 700 }, { name: 'Nova', hp: 130, armor: 80, damage: 44, speed: 11, weaponId: 'weapon_plasma', strategy: 'flanker', shotCooldown: 390, reward: 600 }] },
+  { text: 'Kapitel 6: Drei Gegner. Du musst taktisch vorgehen.', obstacleTheme: { colors: ['#3a3a5a', '#4a4a6a'], sizeRange: { minW: 38, maxW: 62, minH: 32, maxH: 58 } }, opponents: [{ name: 'Shadow-Mech', hp: 110, armor: 70, damage: 40, speed: 12, weaponId: 'weapon_minigun', strategy: 'evasive', shotCooldown: 350, reward: 400 }, { name: 'Iron-Fist', hp: 145, armor: 105, damage: 52, speed: 9, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 360, reward: 600 }, { name: 'Pulsar', hp: 125, armor: 85, damage: 48, speed: 10, weaponId: 'weapon_plasma', strategy: 'flanker', shotCooldown: 370, reward: 500 }] },
+  { text: 'Kapitel 7: Die Elite der Arena. Drei erfahrene Kämpfer.', obstacleTheme: { colors: ['#4a2a3a', '#5a3a4a'], sizeRange: { minW: 40, maxW: 65, minH: 35, maxH: 60 } }, opponents: [{ name: 'Elite Alpha', hp: 170, armor: 125, damage: 58, speed: 10, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 330, reward: 600 }, { name: 'Elite Beta', hp: 150, armor: 110, damage: 54, speed: 11, weaponId: 'weapon_plasma', strategy: 'evasive', shotCooldown: 340, reward: 550 }, { name: 'Elite Gamma', hp: 135, armor: 95, damage: 50, speed: 12, weaponId: 'weapon_minigun', strategy: 'flanker', shotCooldown: 335, reward: 500 }] },
+  { text: 'Kapitel 8: Fast am Ziel. Die härtesten Kämpfer der Liga.', obstacleTheme: { colors: ['#2a2a4a', '#3a3a5a'], sizeRange: { minW: 42, maxW: 68, minH: 38, maxH: 62 } }, opponents: [{ name: 'Champion X', hp: 185, armor: 140, damage: 65, speed: 10, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 310, reward: 700 }, { name: 'Champion Y', hp: 165, armor: 125, damage: 60, speed: 11, weaponId: 'weapon_plasma', strategy: 'defensive', shotCooldown: 320, reward: 650 }, { name: 'Champion Z', hp: 145, armor: 105, damage: 56, speed: 12, weaponId: 'weapon_minigun', strategy: 'evasive', shotCooldown: 315, reward: 600 }] },
+  { text: 'Kapitel 9: Das Halbfinale. Nur die Besten überleben.', obstacleTheme: { colors: ['#5a3a2a', '#6a4a3a'], sizeRange: { minW: 45, maxW: 70, minH: 40, maxH: 65 } }, opponents: [{ name: 'Finalist A', hp: 200, armor: 155, damage: 72, speed: 11, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 290, reward: 800 }, { name: 'Finalist B', hp: 180, armor: 135, damage: 68, speed: 12, weaponId: 'weapon_plasma', strategy: 'evasive', shotCooldown: 300, reward: 750 }, { name: 'Finalist C', hp: 160, armor: 120, damage: 62, speed: 13, weaponId: 'weapon_minigun', strategy: 'flanker', shotCooldown: 295, reward: 700 }] },
+  { text: 'Kapitel 10: Das Finale. Nur einer kann gewinnen. Zeig, was du draufhast!', obstacleTheme: { colors: ['#1a1a2a', '#2a2a3a'], sizeRange: { minW: 50, maxW: 75, minH: 45, maxH: 70 } }, opponents: [{ name: 'Arena-Lord', hp: 220, armor: 175, damage: 82, speed: 11, weaponId: 'weapon_railgun', strategy: 'aggressive', shotCooldown: 270, reward: 1000 }, { name: 'Stahl-Titan', hp: 200, armor: 165, damage: 75, speed: 10, weaponId: 'weapon_plasma', strategy: 'defensive', shotCooldown: 280, reward: 900 }, { name: 'Blitz-Lord', hp: 185, armor: 140, damage: 70, speed: 13, weaponId: 'weapon_minigun', strategy: 'evasive', shotCooldown: 265, reward: 800 }] },
+];
+
 // —— Spieler-Stand
 const INITIAL_STATE = {
   money: 1000,
   ownedPartIds: ['chassis_scout', 'weapon_cannon', 'armor_light'],
   weaponShots: { weapon_cannon: 1, weapon_plasma: 1, weapon_railgun: 1, weapon_minigun: 1 },
   robots: [
-    { name: 'Mech 1', equipped: { chassis: 'chassis_scout', weaponL: 'weapon_cannon', weaponR: 'weapon_cannon', armor: 'armor_light' } },
+    { name: 'Mech 1', equipped: { chassis: 'chassis_scout', weapon: 'weapon_cannon', armor: 'armor_light' } },
   ],
   activeRobotIndex: 0,
   currentEnemy: null,
@@ -35,13 +49,35 @@ const INITIAL_STATE = {
   fightInProgress: false,
   lives: 3,
   score: 0,
+  storyMode: false,
+  storyChapter: 1,
+  playerMines: 10,
+  playerRockets: 10,
 };
+
+const MINE_DAMAGE = 85;
+const ROCKET_DAMAGE = 55;
+const MINE_RADIUS = 18;
+const MINE_PLACE_COOLDOWN = 800;
+const ROCKET_FIRE_COOLDOWN = 1200;
+const MINE_REFILL_PRICE = 150;
+const ROCKET_REFILL_PRICE = 200;
+const MINE_ARMING_MS = 500;
+const ROCKET_TURN_RATE = 0.06;
+const METEOR_DAMAGE = 100;
+const METEOR_WARNING_MS = 2000;
+const METEOR_ZONE_RADIUS = 70;
+const METEOR_ZONES_PER_STORM = 3;
+const METEOR_STORM_MIN_DELAY = 8000;
+const METEOR_STORM_MAX_DELAY = 15000;
 
 const state = Object.assign({}, INITIAL_STATE, {
   ownedPartIds: [...INITIAL_STATE.ownedPartIds],
   weaponShots: { ...INITIAL_STATE.weaponShots },
   robots: INITIAL_STATE.robots.map((r) => ({ name: r.name, equipped: Object.assign({}, r.equipped) })),
   activeRobotIndex: 0,
+  storyMode: false,
+  storyChapter: 1,
 });
 
 function getWeaponShots(weaponId) {
@@ -104,7 +140,7 @@ function startMusic() {
 document.addEventListener('click', startMusic, true);
 document.addEventListener('keydown', startMusic, true);
 
-// —— Schuss-Sound (Web Audio API, keine Datei nötig)
+// —— Sounds (Web Audio API, keine Datei nötig)
 let audioCtx = null;
 function playShotSound() {
   try {
@@ -123,6 +159,74 @@ function playShotSound() {
   } catch (_) {}
 }
 
+function playMineSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.18);
+  } catch (_) {}
+}
+
+function playRocketSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.1);
+  } catch (_) {}
+}
+
+function playMineExplosionSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.2);
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.25);
+  } catch (_) {}
+}
+
+function playRocketExplosionSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.2);
+  } catch (_) {}
+}
+
 // —— Hilfsfunktionen
 function getPart(id) {
   return PARTS_CATALOG.find((p) => p.id === id) || null;
@@ -136,8 +240,7 @@ function getEquippedParts() {
   const eq = getEquipped();
   return {
     chassis: getPart(eq.chassis),
-    weaponL: getPart(eq.weaponL),
-    weaponR: getPart(eq.weaponR),
+    weapon: getPart(eq.weapon),
     armor: getPart(eq.armor),
   };
 }
@@ -145,12 +248,13 @@ function getEquippedParts() {
 function computeRobotStats() {
   const parts = getEquippedParts();
   const sum = (key) =>
-    [parts.chassis, parts.weaponL, parts.weaponR, parts.armor]
+    [parts.chassis, parts.weapon, parts.armor]
       .filter(Boolean)
       .reduce((acc, p) => acc + (p[key] || 0), 0);
 
   return {
-    hp: Math.max(50, sum('hp')),
+    // Basiswert + Ausrüstung, damit Käufe die Werte wirklich erhöhen
+    hp: 200 + Math.max(0, sum('hp')),
     armor: Math.max(0, sum('armor')),
     damage: Math.max(5, sum('damage')),
     speed: Math.max(1, sum('speed')),
@@ -272,7 +376,7 @@ function initNavigation() {
 // —— GARAGE
 function renderGarage() {
   const stats = computeRobotStats();
-  const maxHp = 200;
+  const maxHp = 420;
   const maxArmor = 200;
   const maxDamage = 80;
   const maxSpeed = 20;
@@ -290,8 +394,7 @@ function renderGarage() {
   const parts = getEquippedParts();
   const names = [
     parts.chassis?.name,
-    parts.weaponL?.name,
-    parts.weaponR?.name,
+    parts.weapon?.name,
     parts.armor?.name,
   ].filter(Boolean);
   const equippedEl = document.getElementById('equippedParts');
@@ -299,8 +402,7 @@ function renderGarage() {
   // Ausrüstungs-Dropdowns pro Slot
   const slots = [
     { key: 'chassis', label: 'Chassis', partIds: state.ownedPartIds.filter((id) => getPart(id)?.slot === 'chassis') },
-    { key: 'weaponL', label: 'Waffe links', partIds: state.ownedPartIds.filter((id) => getPart(id)?.slot === 'weapon') },
-    { key: 'weaponR', label: 'Waffe rechts', partIds: state.ownedPartIds.filter((id) => getPart(id)?.slot === 'weapon') },
+    { key: 'weapon', label: 'Kanone', partIds: state.ownedPartIds.filter((id) => getPart(id)?.slot === 'weapon') },
     { key: 'armor', label: 'Rüstung', partIds: state.ownedPartIds.filter((id) => getPart(id)?.slot === 'armor') },
   ];
   let selectHtml = '';
@@ -435,15 +537,59 @@ function renderShop() {
       state.money -= robotPrice;
       state.robots.push({
         name: `Mech ${state.robots.length + 1}`,
-        equipped: { chassis: 'chassis_scout', weaponL: 'weapon_cannon', weaponR: 'weapon_cannon', armor: 'armor_light' },
+        equipped: { chassis: 'chassis_scout', weapon: 'weapon_cannon', armor: 'armor_light' },
       });
-      state.ownedPartIds.push('chassis_scout', 'weapon_cannon', 'weapon_cannon', 'armor_light');
+      state.ownedPartIds.push('chassis_scout', 'weapon_cannon', 'armor_light');
       updateMoney();
       renderShop();
       renderGarage();
     });
   }
   grid.appendChild(robotDiv);
+
+  // Minen-Nachschub (10 Stück)
+  const mineRefillDiv = document.createElement('div');
+  mineRefillDiv.className = 'shop-item shop-item-refill';
+  const canRefillMines = state.money >= MINE_REFILL_PRICE && state.playerMines < 10;
+  mineRefillDiv.innerHTML = `
+    <h4>Minen-Nachschub</h4>
+    <p class="slot">10 Minen</p>
+    <p class="stats">Aktuell: ${state.playerMines}/10 · Explodieren bei Berührung</p>
+    <p class="price">${MINE_REFILL_PRICE} Credits</p>
+    <button ${!canRefillMines ? 'disabled' : ''}>${state.playerMines >= 10 ? 'Voll' : !canRefillMines ? 'Zu wenig Credits' : 'Auffüllen'}</button>
+  `;
+  const mineBtn = mineRefillDiv.querySelector('button');
+  if (canRefillMines) {
+    mineBtn.addEventListener('click', () => {
+      state.money -= MINE_REFILL_PRICE;
+      state.playerMines = 10;
+      updateMoney();
+      renderShop();
+    });
+  }
+  grid.appendChild(mineRefillDiv);
+
+  // Raketen-Nachschub (10 Stück)
+  const rocketRefillDiv = document.createElement('div');
+  rocketRefillDiv.className = 'shop-item shop-item-refill';
+  const canRefillRockets = state.money >= ROCKET_REFILL_PRICE && state.playerRockets < 10;
+  rocketRefillDiv.innerHTML = `
+    <h4>Raketen-Nachschub</h4>
+    <p class="slot">10 Raketen</p>
+    <p class="stats">Aktuell: ${state.playerRockets}/10 · Homing-Raketen</p>
+    <p class="price">${ROCKET_REFILL_PRICE} Credits</p>
+    <button ${!canRefillRockets ? 'disabled' : ''}>${state.playerRockets >= 10 ? 'Voll' : !canRefillRockets ? 'Zu wenig Credits' : 'Auffüllen'}</button>
+  `;
+  const rocketBtn = rocketRefillDiv.querySelector('button');
+  if (canRefillRockets) {
+    rocketBtn.addEventListener('click', () => {
+      state.money -= ROCKET_REFILL_PRICE;
+      state.playerRockets = 10;
+      updateMoney();
+      renderShop();
+    });
+  }
+  grid.appendChild(rocketRefillDiv);
 
   const ownedList = document.getElementById('ownedList');
   if (ownedList) {
@@ -452,7 +598,7 @@ function renderShop() {
       const p = getPart(id);
       if (!p) return;
       const isEquipped = state.robots.some(
-        (r) => r.equipped.chassis === id || r.equipped.weaponL === id || r.equipped.weaponR === id || r.equipped.armor === id
+        (r) => r.equipped.chassis === id || r.equipped.weapon === id || r.equipped.armor === id
       );
       const tag = document.createElement('span');
       tag.className = 'owned-tag' + (isEquipped ? ' equipped' : '');
@@ -462,25 +608,39 @@ function renderShop() {
   }
 }
 
-// —— ARENA: Gegner generieren (etwas stärker)
+// —— ARENA: Gegner generieren (Einfach / Mittel / Schwer)
 function generateOpponents() {
   const myStats = computeRobotStats();
   const myPower = getPowerLevel(myStats);
   const names = ['Scrap-King', 'Rost-Ritter', 'Blitz-Bot', 'Stahl-Wolf', 'Titan-X', 'Vulkan', 'Nova', 'Shadow-Mech', 'Iron-Fist', 'Pulsar'];
   const list = [];
-  for (let i = 0; i < 5; i++) {
-    // Etwas stärker: Gegner haben jetzt 85-95% der Spieler-Power
-    const powerVariation = (i - 2) * 12 + Math.floor(Math.random() * 20);
-    const power = Math.max(40, myPower * 0.85 + powerVariation); // 85% der Spieler-Power
-    const hp = 50 + (power * 0.3) + Math.floor(Math.random() * 30); // Mehr HP
-    const armor = 2 * (15 + (power * 0.12) + Math.floor(Math.random() * 20));
-    const damage = 15 + (power * 0.15) + Math.floor(Math.random() * 15);
-    const speed = Math.round((4 + Math.floor(Math.random() * 6)) * 1.2);
-    const reward = 70 + power + Math.floor(Math.random() * 50);
+  const difficulties = [
+    { level: 'easy', powerMult: 0.55, powerVar: 0.12, rewardMult: 0.7, shotMult: 1.4 },
+    { level: 'easy', powerMult: 0.62, powerVar: 0.1, rewardMult: 0.75, shotMult: 1.35 },
+    { level: 'easy', powerMult: 0.68, powerVar: 0.08, rewardMult: 0.8, shotMult: 1.3 },
+    { level: 'medium', powerMult: 0.75, powerVar: 0.1, rewardMult: 0.9, shotMult: 1.15 },
+    { level: 'medium', powerMult: 0.82, powerVar: 0.08, rewardMult: 0.95, shotMult: 1.1 },
+    { level: 'medium', powerMult: 0.88, powerVar: 0.06, rewardMult: 1.0, shotMult: 1.05 },
+    { level: 'hard', powerMult: 0.92, powerVar: 0.08, rewardMult: 1.1, shotMult: 0.95 },
+    { level: 'hard', powerMult: 0.98, powerVar: 0.06, rewardMult: 1.15, shotMult: 0.9 },
+    { level: 'hard', powerMult: 1.05, powerVar: 0.05, rewardMult: 1.2, shotMult: 0.85 },
+  ];
+  difficulties.forEach((diff, idx) => {
+    const baseName = names[idx % names.length];
+    const power = Math.max(35, myPower * (diff.powerMult + (Math.random() - 0.5) * diff.powerVar * 2));
+    const hp = 50 + (power * 0.32) + Math.floor(Math.random() * 30);
+    const armor = 2 * (15 + (power * 0.12) + Math.floor(Math.random() * 18));
+    const damage = 16 + (power * 0.16) + Math.floor(Math.random() * 16);
+    const speed = Math.round((5 + Math.floor(Math.random() * 8)) * (diff.level === 'easy' ? 1.0 : diff.level === 'medium' ? 1.1 : 1.15));
+    const reward = Math.round((60 + power * 0.5) * diff.rewardMult + Math.random() * 40);
     const weaponIds = ['weapon_cannon', 'weapon_plasma', 'weapon_railgun', 'weapon_minigun'];
     const weaponId = weaponIds[Math.floor(Math.random() * weaponIds.length)];
+    const strategies = ['aggressive', 'defensive', 'evasive', 'flanker'];
+    const strategy = strategies[Math.floor(Math.random() * strategies.length)];
+    const baseCooldown = diff.level === 'easy' ? 450 : diff.level === 'medium' ? 400 : 350;
+    const shotCooldown = Math.round(baseCooldown * diff.shotMult + Math.random() * 80);
     list.push({
-      name: names[Math.floor(Math.random() * names.length)] + ' #' + (i + 1),
+      name: baseName + ' #' + (idx + 1),
       hp: Math.round(hp),
       armor: Math.round(armor),
       damage: Math.round(damage),
@@ -488,8 +648,11 @@ function generateOpponents() {
       reward,
       power: Math.round(getPowerLevel({ hp, armor, damage, speed })),
       weaponId,
+      strategy,
+      shotCooldown,
+      difficulty: diff.level,
     });
-  }
+  });
   return list;
 }
 
@@ -499,8 +662,39 @@ function renderArena() {
     const opponentSelect = document.getElementById('opponentSelect');
     const mode1v1 = document.getElementById('mode1v1');
     const mode1v3 = document.getElementById('mode1v3');
+    const modeSelect = document.querySelector('.arena-mode-select');
     const btnFight = document.getElementById('btnFight');
+    const btnNextOpponent = document.getElementById('btnNextOpponent');
 
+    if (state.storyMode) {
+      if (opponentSelect) opponentSelect.style.display = 'none';
+      if (modeSelect) modeSelect.style.display = 'none';
+      if (btnNextOpponent) btnNextOpponent.style.display = 'none';
+      const chapter = STORY_CHAPTERS[state.storyChapter - 1];
+      state.currentEnemies = chapter ? [...chapter.opponents] : [];
+      if (btnFight) btnFight.disabled = false;
+      const arenaStatusEl = document.getElementById('arenaStatus');
+      const enemyNames = state.currentEnemies.map((e) => e.name).join(', ');
+      if (arenaStatusEl) arenaStatusEl.innerHTML = `<p><strong>Kapitel ${state.storyChapter}</strong> — ${state.currentEnemies.length} Gegner: ${enemyNames}. Rüste dich in der Garage aus, dann "Kampf starten".</p>`;
+      const enemyNameEl = document.getElementById('enemyName');
+      const enemyHpTextEl = document.getElementById('enemyHpText');
+      const enemyHpBarEl = document.getElementById('enemyHpBar');
+      const totalHp = state.currentEnemies.reduce((s, e) => s + e.hp, 0);
+      if (enemyNameEl) enemyNameEl.textContent = state.currentEnemies.length > 1 ? `${state.currentEnemies.length} Gegner` : (state.currentEnemies[0]?.name || '?');
+      if (enemyHpTextEl) enemyHpTextEl.textContent = `${totalHp} / ${totalHp}`;
+      if (enemyHpBarEl) enemyHpBarEl.style.width = '100%';
+      const stats = computeRobotStats();
+      const playerNameEl = document.getElementById('playerName');
+      const playerHpTextEl = document.getElementById('playerHpText');
+      const playerHpBarEl = document.getElementById('playerHpBar');
+      if (playerNameEl) playerNameEl.textContent = 'Dein Mech';
+      if (playerHpTextEl) playerHpTextEl.textContent = `${stats.hp} / ${stats.hp}`;
+      if (playerHpBarEl) playerHpBarEl.style.width = '100%';
+      return;
+    }
+
+    if (modeSelect) modeSelect.style.display = '';
+    if (btnNextOpponent) btnNextOpponent.style.display = '';
     if (mode1v1 && mode1v3) {
       mode1v1.classList.toggle('active', state.arenaMode === '1v1');
       mode1v3.classList.toggle('active', state.arenaMode === '1v3');
@@ -527,8 +721,9 @@ function renderArena() {
     if (state.arenaMode === '1v1') {
     opponents.forEach((opp, index) => {
       const btn = document.createElement('button');
-      btn.className = 'opponent-btn';
-      btn.innerHTML = `${opp.name} <span class="power">(Power: ${opp.power})</span>`;
+      const diffLabel = opp.difficulty === 'easy' ? 'Einfach' : opp.difficulty === 'medium' ? 'Mittel' : 'Schwer';
+      btn.className = `opponent-btn opponent-diff-${opp.difficulty || 'medium'}`;
+      btn.innerHTML = `${opp.name} <span class="power">(Power: ${opp.power})</span> <span class="diff-badge">${diffLabel}</span>`;
       
       btn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -616,16 +811,21 @@ let gameState = {
   player: null,
   enemies: [],
   projectiles: [],
+  mines: [],
+  meteorWarnings: [],
   particles: [],
   obstacles: [],
   keys: {},
   animationId: null,
   lastShot: 0,
+  lastMinePlace: 0,
+  lastRocketFire: 0,
   enemyLastShot: 0,
   countdown: 0,
   countdownStartTime: 0,
   fightEnded: false,
   winner: null,
+  nextMeteorStormAt: 0,
 };
 
 function initCanvas() {
@@ -635,10 +835,22 @@ function initCanvas() {
   resizeFightCanvas();
 }
 
+const MAX_CANVAS_WIDTH = 1280;
+const MAX_CANVAS_HEIGHT = 720;
+
 function resizeFightCanvas() {
   if (!canvas) return;
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.width = Math.min(window.innerWidth, MAX_CANVAS_WIDTH);
+  canvas.height = Math.min(window.innerHeight, MAX_CANVAS_HEIGHT);
+  if (canvas.width < window.innerWidth || canvas.height < window.innerHeight) {
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.objectFit = 'contain';
+  } else {
+    canvas.style.width = '';
+    canvas.style.height = '';
+    canvas.style.objectFit = '';
+  }
 }
 
 function showFightOverlay() {
@@ -661,6 +873,10 @@ function updateHud() {
     if (bar) bar.style.width = `${(Math.max(0, p.hp) / p.maxHp) * 100}%`;
     if (text) text.textContent = `${Math.max(0, Math.round(p.hp))} / ${p.maxHp}`;
   }
+  const mineEl = document.getElementById('hudMines');
+  const rocketEl = document.getElementById('hudRockets');
+  if (mineEl) mineEl.textContent = `Minen: ${state.playerMines}`;
+  if (rocketEl) rocketEl.textContent = `Raketen: ${state.playerRockets}`;
   if (enemies.length > 0) {
     const totalHp = enemies.reduce((s, e) => s + Math.max(0, e.hp), 0);
     const totalMax = enemies.reduce((s, e) => s + e.maxHp, 0);
@@ -702,31 +918,12 @@ function drawThrusterFlame(ctx, x, y, angle, size, thrust) {
   const len = size * (0.8 + thrust * 1.2) * flicker;
   const w = size * 0.35 * (0.6 + thrust * 0.4);
 
-  // Outer glow
-  const grad = ctx.createRadialGradient(-size * 0.5, 0, 0, -size * 0.5, 0, len);
-  grad.addColorStop(0, 'rgba(255, 200, 50, 0.7)');
-  grad.addColorStop(0.4, 'rgba(255, 120, 20, 0.4)');
-  grad.addColorStop(1, 'rgba(255, 60, 10, 0)');
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.ellipse(-size * 0.5, 0, len, w * 1.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Inner flame
-  ctx.shadowBlur = 0;
   ctx.fillStyle = '#ffdd44';
   ctx.beginPath();
   ctx.moveTo(-size * 0.5, -w * 0.5);
   ctx.lineTo(-size * 0.5 - len * 0.6, 0);
   ctx.lineTo(-size * 0.5, w * 0.5);
   ctx.closePath();
-  ctx.fill();
-
-  // Bright core
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(-size * 0.5, 0, w * 0.3, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
@@ -737,7 +934,7 @@ function drawMech(x, y, angle, color, size = 20, isPlayer = false, enemyIndex = 
 
   ctx.save();
   ctx.shadowColor = color;
-  ctx.shadowBlur = 8;
+  ctx.shadowBlur = 4;
 
   if (isPlayer && typeof drawPlayerMechLayered === 'function') {
     drawPlayerMechLayered(ctx, x, y, angle, size, color);
@@ -763,9 +960,9 @@ function drawMech(x, y, angle, color, size = 20, isPlayer = false, enemyIndex = 
   ctx.restore();
 }
 
-const MAX_PARTICLES = 80;
+const MAX_PARTICLES = 45;
 function spawnExplosion(x, y, color, count) {
-  const n = Math.min(count || 5, 6);
+  const n = Math.min(count || 5, 4);
   for (let i = 0; i < n; i++) {
     if (gameState.particles.length >= MAX_PARTICLES) break;
     const angle = Math.random() * Math.PI * 2;
@@ -821,10 +1018,55 @@ function drawProjectile(proj) {
   ctx.translate(x, y);
   ctx.rotate(angle);
   
+  if (proj.type === 'rocket') {
+    const t = Date.now() / 80;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 6;
+    // Raketenkörper
+    ctx.fillStyle = color;
+    ctx.fillRect(-10, -3, 16, 6);
+    // Spitze (Nasenkonus)
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(6, 0);
+    ctx.lineTo(12, -2.5);
+    ctx.lineTo(12, 2.5);
+    ctx.closePath();
+    ctx.fill();
+    // Heck-Flossen (Fins)
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(-10, -3);
+    ctx.lineTo(-14, -5);
+    ctx.lineTo(-10, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-10, 3);
+    ctx.lineTo(-14, 5);
+    ctx.lineTo(-10, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    // Flamme (pulsierend, vereinfacht)
+    const flameLen = 6 + Math.sin(t) * 2;
+    ctx.fillStyle = 'rgba(255, 160, 60, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(-10, -2);
+    ctx.lineTo(-10 - flameLen, 0);
+    ctx.lineTo(-10, 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    return;
+  }
+  
   switch (weaponId) {
     case 'weapon_plasma':
       ctx.shadowColor = '#aa44ff';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 4;
       ctx.fillStyle = '#ff66ff';
       ctx.beginPath();
       ctx.arc(0, 0, 8, 0, Math.PI * 2);
@@ -840,7 +1082,7 @@ function drawProjectile(proj) {
       break;
     case 'weapon_railgun':
       ctx.shadowColor = '#4488ff';
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 4;
       ctx.fillStyle = '#66aaff';
       ctx.fillRect(-14, -1.5, 20, 3);
       ctx.fillStyle = '#aaddff';
@@ -883,7 +1125,7 @@ function drawProjectile(proj) {
     case 'weapon_cannon':
     default:
       ctx.shadowColor = color;
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 4;
       ctx.fillStyle = color;
       ctx.fillRect(-8, -2, 12, 4);
       ctx.beginPath();
@@ -1007,21 +1249,19 @@ function updatePlayer() {
     }
   }
 
-  // Schießen (beide Waffen gleichzeitig)
+  // Schießen
   const now = Date.now();
   if (gameState.keys[' '] && now - gameState.lastShot > 200) {
     gameState.lastShot = now;
     const parts = getEquippedParts();
-    const projSpeed = 4.5;
-    const spreadAngle = 0.08;
-    [parts.weaponL, parts.weaponR].forEach((weapon, idx) => {
-      if (!weapon) return;
-      const useLeft = idx === 0;
-      const offset = useLeft ? -6 : 6;
-      const baseX = p.x + Math.cos(p.angle) * 18 + Math.cos(p.angle + Math.PI / 2) * offset;
-      const baseY = p.y + Math.sin(p.angle) * 18 + Math.sin(p.angle + Math.PI / 2) * offset;
+    const weapon = parts.weapon;
+    if (weapon) {
+      const projSpeed = 4.5;
+      const spreadAngle = 0.08;
+      const baseX = p.x + Math.cos(p.angle) * 18;
+      const baseY = p.y + Math.sin(p.angle) * 18;
       const count = getWeaponShots(weapon.id);
-      const dmgPerProj = weapon.damage / count;
+      const dmgPerProj = weapon.damage;
       for (let i = 0; i < count; i++) {
         const angleOff = (i - (count - 1) / 2) * spreadAngle;
         const angle = p.angle + angleOff;
@@ -1041,8 +1281,43 @@ function updatePlayer() {
           totalDist: 0,
         });
       }
+      playShotSound();
+    }
+  }
+
+  // Mine platzieren (X)
+  if (gameState.keys['x'] && state.playerMines > 0 && now - gameState.lastMinePlace > MINE_PLACE_COOLDOWN) {
+    gameState.lastMinePlace = now;
+    state.playerMines--;
+    gameState.mines.push({
+      x: p.x + Math.cos(p.angle) * 24,
+      y: p.y + Math.sin(p.angle) * 24,
+      owner: 'player',
+      placedAt: now,
     });
-    if (parts.weaponL || parts.weaponR) playShotSound();
+    playMineSound();
+  }
+
+  // Rakete abfeuern (Y)
+  if (gameState.keys['y'] && state.playerRockets > 0 && now - gameState.lastRocketFire > ROCKET_FIRE_COOLDOWN) {
+    gameState.lastRocketFire = now;
+    state.playerRockets--;
+    const projSpeed = 3.2;
+    const baseX = p.x + Math.cos(p.angle) * 18;
+    const baseY = p.y + Math.sin(p.angle) * 18;
+    const projColor = gameState.playerRobotIndex === 1 ? '#ff4757' : '#00d4aa';
+    gameState.projectiles.push({
+      x: baseX,
+      y: baseY,
+      vx: Math.cos(p.angle) * projSpeed,
+      vy: Math.sin(p.angle) * projSpeed,
+      damage: ROCKET_DAMAGE,
+      owner: 'player',
+      type: 'rocket',
+      color: projColor,
+      totalDist: 0,
+    });
+    playRocketSound();
   }
 }
 
@@ -1055,8 +1330,8 @@ function updateEnemies() {
   gameState.enemies.forEach((e, eIdx) => {
     if (e.hp <= 0) return;
   
-  const maxSpeed = e.speed * 0.3;  // Etwas schneller, aber langsamer als Schüsse (projSpeed 3.5)
-  const acceleration = 0.09;
+  const maxSpeed = e.speed * 0.38;  // 10% langsamer als vorher (0.42 * 0.9)
+  const acceleration = 0.12;       // Schnellere Reaktion
   const friction = 0.97;
   if (e.thrust === undefined) e.thrust = 0;
   if (e.retreatUntil === undefined) e.retreatUntil = 0;
@@ -1089,20 +1364,33 @@ function updateEnemies() {
   });
   
   if (!isRetreating) {
-    const hpPercent = e.hp / e.maxHp;
-    const shouldRetreat = minAllyDist < 55 ||
-      (e.strategy === 'defensive' && hpPercent < 0.4) ||
-      (e.strategy === 'flanker' && (!e._lastFlank || now - e._lastFlank > 4500));
+    const shouldRetreat = minAllyDist < 45;
     if (shouldRetreat) {
-      e.retreatUntil = now + 2200 + Math.random() * 1000;
-      if (e.strategy === 'flanker') e._lastFlank = now;
+      e.retreatUntil = now + 800 + Math.random() * 500;
     }
   }
+
+  // Angriff/Verteidigung wechseln – alle Gegner abwechselnd, nie nur angreifen oder nur verteidigen
+  const phaseDurations = {
+    aggressive: { attack: 2200, defend: 1600 },
+    defensive: { attack: 1600, defend: 2200 },
+    evasive: { attack: 1900, defend: 1900 },
+    flanker: { attack: 2000, defend: 1800 },
+  };
+  const durations = phaseDurations[e.strategy] || phaseDurations.aggressive;
+  if (e._phaseUntil === undefined) {
+    e._phase = 'attack';
+    e._phaseUntil = now + durations.attack;
+  }
+  if (now > e._phaseUntil) {
+    e._phase = e._phase === 'attack' ? 'defend' : 'attack';
+    e._phaseUntil = now + (e._phase === 'attack' ? durations.attack : durations.defend);
+  }
   
-  // Ziel wählen: Spieler oder (in 1v3) zufällig auch andere Gegner
+  // Ziel wählen: Spieler oder (in 1v3) zufällig auch andere Gegner – häufiger wechseln
   const is1v3 = state.arenaMode === '1v3';
   if (e._targetSwitchAt === undefined || now > e._targetSwitchAt) {
-    e._targetSwitchAt = now + 2500 + Math.random() * 2000;
+    e._targetSwitchAt = now + 1200 + Math.random() * 1800;
     const targets = [{ player: true }];
     if (is1v3) {
       gameState.enemies.forEach((other, oIdx) => {
@@ -1149,7 +1437,8 @@ function updateEnemies() {
     let angleDiff = targetAngle - e.angle;
     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
     while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-    e.angle += angleDiff * 0.05;
+    const rotSpeed = 0.06;
+    e.angle += angleDiff * rotSpeed;
     
     let avoidX = 0, avoidY = 0;
     const lookAhead = 50;
@@ -1170,17 +1459,12 @@ function updateEnemies() {
     
     let moveStrength = 1.0;
     const moveDir = isRetreating ? -1 : 1;
+    const randVar = 0.92 + Math.random() * 0.16;
     if (!isRetreating) {
-      if (e.strategy === 'evasive') {
-        if (dist < 70) moveStrength = -0.5;
-        else if (dist < 110) moveStrength = 0.25;
-        else moveStrength = 1.0;
-      } else if (e.strategy === 'defensive' && e.hp / e.maxHp < 0.6) {
-        moveStrength = dist < 100 ? 0.5 : 0.85;
-      } else if (e.strategy === 'flanker') {
-        moveStrength = dist > 90 ? 1.0 : 0.6;
+      if (e._phase === 'attack') {
+        moveStrength = (dist > 80 ? 0.85 : dist > 50 ? 0.7 : 0.6) * randVar;
       } else {
-        moveStrength = dist > 80 ? 1.0 : 0.7;
+        moveStrength = (-0.35 - Math.random() * 0.2) * randVar;
       }
     }
     targetVx += Math.cos(e.angle) * maxSpeed * moveStrength * moveDir + avoidX;
@@ -1238,14 +1522,49 @@ function updateEnemies() {
     }
   }
 
-  const shotCooldown = e.shotCooldown ?? 850;
+  // Gegner: Mine legen (wenn Spieler nah und zufällig)
+  if ((e.mines || 0) > 0 && now - (e.lastMinePlace || 0) > MINE_PLACE_COOLDOWN && dist < 100 && Math.random() < 0.012) {
+    e.lastMinePlace = now;
+    e.mines--;
+    gameState.mines.push({
+      x: e.x + Math.cos(e.angle) * 24,
+      y: e.y + Math.sin(e.angle) * 24,
+      owner: 'enemy',
+      placedAt: now,
+    });
+    playMineSound();
+  }
+
+  // Gegner: Rakete abfeuern (wenn Spieler in Reichweite)
+  if ((e.rockets || 0) > 0 && now - (e.lastRocketFire || 0) > ROCKET_FIRE_COOLDOWN && dist < 250 && Math.random() < 0.008) {
+    e.lastRocketFire = now;
+    e.rockets--;
+    const projSpeed = 3.2;
+    const baseX = e.x + Math.cos(e.angle) * 18;
+    const baseY = e.y + Math.sin(e.angle) * 18;
+    gameState.projectiles.push({
+      x: baseX,
+      y: baseY,
+      vx: Math.cos(e.angle) * projSpeed,
+      vy: Math.sin(e.angle) * projSpeed,
+      damage: ROCKET_DAMAGE,
+      owner: 'enemy',
+      enemyIndex: eIdx,
+      type: 'rocket',
+      color: '#ff4757',
+      totalDist: 0,
+    });
+    playRocketSound();
+  }
+
+  const shotCooldown = e.shotCooldown ?? 520;
   if (now - (e.lastShot || 0) > shotCooldown) {
     e.lastShot = now;
     playShotSound();
-    const projSpeed = 3.5;
+    const projSpeed = 3.8;
     const weaponId = e.weaponId || 'weapon_cannon';
-    const count = e.shotsPerVolley ?? 1;  // Gegner: 1 Schuss (oder zufällig 1–3)
-    const dmgPerProj = e.damage / count;
+    const count = e.shotsPerVolley ?? (Math.random() < 0.35 ? 2 : 1);
+    const dmgPerProj = e.damage;
     const spreadAngle = 0.08;
     for (let i = 0; i < count; i++) {
       const angleOff = (i - (count - 1) / 2) * spreadAngle;
@@ -1270,7 +1589,7 @@ function updateEnemies() {
 }
 
 // —— Hindernisse: zufällig pro Kampf
-function generateObstacles() {
+function generateObstacles(theme) {
   const obstacles = [];
   const count = 5 + Math.floor(Math.random() * 5); // 5–9 Hindernisse
   const playerStartX = canvas.width * 0.2;
@@ -1279,12 +1598,17 @@ function generateObstacles() {
   const enemyStartY = canvas.height * 0.5;
   const margin = 70; // Mindestabstand zu Startpositionen
 
+  const sizeRange = theme?.sizeRange || { minW: 30, maxW: 65, minH: 25, maxH: 65 };
+  const colors = theme?.colors || ['#3a4555','#4a5568'];
+  const sizeW = sizeRange.maxW - sizeRange.minW;
+  const sizeH = sizeRange.maxH - sizeRange.minH;
+
   for (let i = 0; i < count; i++) {
     let x, y, w, h;
     let tries = 0;
     do {
-      w = 30 + Math.floor(Math.random() * 35); // 30–65 px breit
-      h = 25 + Math.floor(Math.random() * 40); // 25–65 px hoch
+      w = sizeRange.minW + Math.floor(Math.random() * (sizeW + 1));
+      h = sizeRange.minH + Math.floor(Math.random() * (sizeH + 1));
       x = margin + w + Math.random() * (canvas.width - 2 * margin - 2 * w);
       y = margin + h + Math.random() * (canvas.height - 2 * margin - 2 * h);
       tries++;
@@ -1294,7 +1618,8 @@ function generateObstacles() {
        Math.hypot(x - enemyStartX, y - enemyStartY) < margin + Math.max(w, h))
     );
 
-    obstacles.push({ x, y, w, h });
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    obstacles.push({ x, y, w, h, color });
   }
 
   gameState.obstacles = obstacles;
@@ -1379,7 +1704,8 @@ function drawShield() {
 function drawObstacle(obs) {
   const x = obs.x - obs.w / 2;
   const y = obs.y - obs.h / 2;
-  ctx.fillStyle = '#3a4555';
+  const baseColor = obs.color || '#3a4555';
+  ctx.fillStyle = baseColor;
   ctx.fillRect(x, y, obs.w, obs.h);
   ctx.strokeStyle = '#4a5568';
   ctx.lineWidth = 2;
@@ -1455,6 +1781,144 @@ function resolveCollision(robot1, robot2, radius1 = 14, radius2 = 14) {
   }
 }
 
+function triggerEnemyDeathExplosion(enemy) {
+  if (!enemy || enemy._deathFxPlayed) return;
+  enemy._deathFxPlayed = true;
+  spawnExplosion(enemy.x, enemy.y, '#ff4757', 24);
+}
+
+function getAliveEnemiesCount() {
+  return gameState.enemies.filter((x) => x.hp > 0).length;
+}
+
+function updateMines() {
+  if (gameState.countdown > 0 || gameState.fightEnded) return;
+  const p = gameState.player;
+  const enemies = gameState.enemies;
+  const stats = gameState.playerStats || computeRobotStats();
+  const minesToRemove = [];
+  const hitRadius = MINE_RADIUS + 14;
+
+  const now = Date.now();
+  for (let i = 0; i < gameState.mines.length; i++) {
+    const mine = gameState.mines[i];
+    const distTo = (x, y) => Math.hypot(mine.x - x, mine.y - y);
+    const isArmed = !mine.placedAt || now - mine.placedAt > MINE_ARMING_MS;
+
+    if (isArmed && p && p.hp > 0 && distTo(p.x, p.y) < hitRadius) {
+      minesToRemove.push(mine);
+      if (Date.now() < (p.shieldUntil || 0)) {
+        spawnExplosion(mine.x, mine.y, '#ffaa00', 12);
+        playMineExplosionSound();
+        continue;
+      }
+      const dmg = Math.max(1, Math.floor(MINE_DAMAGE - (stats.armor || 0) / 2));
+      p.hp -= dmg;
+      spawnExplosion(mine.x, mine.y, '#ffaa00', 14);
+      playMineExplosionSound();
+      if (p.hp <= 0) endFight(false);
+      continue;
+    }
+
+    if (isArmed && enemies) {
+      for (let j = 0; j < enemies.length; j++) {
+        const e = enemies[j];
+        if (e.hp <= 0) continue;
+        if (distTo(e.x, e.y) < hitRadius) {
+          minesToRemove.push(mine);
+          if (Date.now() < (e.shieldUntil || 0)) {
+            spawnExplosion(mine.x, mine.y, '#ffaa00', 12);
+            playMineExplosionSound();
+            break;
+          }
+          const dmg = Math.max(1, Math.floor(MINE_DAMAGE - e.armor / 2));
+          e.hp -= dmg;
+          if (e.hp <= 0) triggerEnemyDeathExplosion(e);
+          spawnExplosion(mine.x, mine.y, '#ffaa00', 14);
+          playMineExplosionSound();
+          if (getAliveEnemiesCount() === 0) endFight(true);
+          break;
+        }
+      }
+    }
+  }
+
+  gameState.mines = gameState.mines.filter((m) => !minesToRemove.includes(m));
+}
+
+function scheduleNextMeteorStorm(now = Date.now()) {
+  const delay = METEOR_STORM_MIN_DELAY + Math.random() * (METEOR_STORM_MAX_DELAY - METEOR_STORM_MIN_DELAY);
+  gameState.nextMeteorStormAt = now + delay;
+}
+
+function spawnMeteorStorm(now = Date.now()) {
+  const margin = METEOR_ZONE_RADIUS + 10;
+  for (let i = 0; i < METEOR_ZONES_PER_STORM; i++) {
+    const x = margin + Math.random() * Math.max(1, canvas.width - margin * 2);
+    const y = margin + Math.random() * Math.max(1, canvas.height - margin * 2);
+    const startX = x + (Math.random() * 2 - 1) * 220;
+    const startY = y - (160 + Math.random() * 180);
+    gameState.meteorWarnings.push({
+      x,
+      y,
+      startX,
+      startY,
+      size: 10 + Math.random() * 6,
+      rot: Math.random() * Math.PI * 2,
+      spin: (Math.random() * 0.06 + 0.02) * (Math.random() < 0.5 ? -1 : 1),
+      radius: METEOR_ZONE_RADIUS,
+      impactAt: now + METEOR_WARNING_MS,
+    });
+  }
+}
+
+function updateMeteorStorms() {
+  if (gameState.countdown > 0 || gameState.fightEnded) return;
+  const now = Date.now();
+
+  if (!gameState.nextMeteorStormAt) scheduleNextMeteorStorm(now);
+  if (gameState.meteorWarnings.length === 0 && now >= gameState.nextMeteorStormAt) {
+    spawnMeteorStorm(now);
+    scheduleNextMeteorStorm(now);
+  }
+
+  if (gameState.meteorWarnings.length === 0) return;
+  const due = gameState.meteorWarnings.filter((z) => now >= z.impactAt);
+  if (due.length === 0) return;
+
+  const p = gameState.player;
+  const enemies = gameState.enemies;
+  due.forEach((zone) => {
+    const r2 = zone.radius * zone.radius;
+    spawnExplosion(zone.x, zone.y, '#ff8844', 20);
+
+    if (p && p.hp > 0) {
+      const dx = p.x - zone.x;
+      const dy = p.y - zone.y;
+      if (dx * dx + dy * dy <= r2) {
+        p.hp -= METEOR_DAMAGE;
+        if (p.hp <= 0) endFight(false);
+      }
+    }
+
+    if (enemies) {
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        if (e.hp <= 0) continue;
+        const dx = e.x - zone.x;
+        const dy = e.y - zone.y;
+        if (dx * dx + dy * dy <= r2) {
+          e.hp -= METEOR_DAMAGE;
+          if (e.hp <= 0) triggerEnemyDeathExplosion(e);
+        }
+      }
+      if (getAliveEnemiesCount() === 0) endFight(true);
+    }
+  });
+
+  gameState.meteorWarnings = gameState.meteorWarnings.filter((z) => now < z.impactAt);
+}
+
 function updateProjectiles() {
   // Während Countdown keine Projektile aktualisieren
   if (gameState.countdown > 0 || gameState.fightEnded) {
@@ -1465,7 +1929,55 @@ function updateProjectiles() {
   const p = gameState.player;
   const enemies = gameState.enemies;
   
-  // 1. Alle Projektile bewegen
+  // 1. Raketen: Homing (begrenzter Kurvenradius)
+  const wrapDist = (ax, ay, bx, by) => {
+    let dx = bx - ax, dy = by - ay;
+    if (Math.abs(dx) > canvas.width / 2) dx -= Math.sign(dx) * canvas.width;
+    if (Math.abs(dy) > canvas.height / 2) dy -= Math.sign(dy) * canvas.height;
+    return { dx, dy, dist: Math.sqrt(dx * dx + dy * dy) };
+  };
+  gameState.projectiles.forEach((proj) => {
+    if (proj.type === 'rocket') {
+      let tx = 0, ty = 0;
+      if (proj.owner === 'player' && enemies?.length) {
+        let best = Infinity;
+        enemies.forEach((e) => {
+          if (e.hp <= 0) return;
+          const { dist } = wrapDist(proj.x, proj.y, e.x, e.y);
+          if (dist < best) { best = dist; tx = e.x; ty = e.y; }
+        });
+        if (best < Infinity) {
+          const { dx, dy, dist } = wrapDist(proj.x, proj.y, tx, ty);
+          if (dist > 5) {
+            const wantAngle = Math.atan2(dy, dx);
+            const curAngle = Math.atan2(proj.vy, proj.vx);
+            let diff = wantAngle - curAngle;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const clamped = Math.max(-ROCKET_TURN_RATE, Math.min(ROCKET_TURN_RATE, diff));
+            const speed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy) || 3.2;
+            proj.vx = Math.cos(curAngle + clamped) * speed;
+            proj.vy = Math.sin(curAngle + clamped) * speed;
+          }
+        }
+      } else if (proj.owner === 'enemy' && p && p.hp > 0) {
+        const { dx, dy, dist } = wrapDist(proj.x, proj.y, p.x, p.y);
+        if (dist > 5) {
+          const wantAngle = Math.atan2(dy, dx);
+          const curAngle = Math.atan2(proj.vy, proj.vx);
+          let diff = wantAngle - curAngle;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          const clamped = Math.max(-ROCKET_TURN_RATE, Math.min(ROCKET_TURN_RATE, diff));
+          const speed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy) || 3.2;
+          proj.vx = Math.cos(curAngle + clamped) * speed;
+          proj.vy = Math.sin(curAngle + clamped) * speed;
+        }
+      }
+    }
+  });
+
+  // 2. Alle Projektile bewegen
   const maxDist = Math.max(canvas.width, canvas.height) * 0.5;
   gameState.projectiles.forEach((proj) => {
     const dist = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy);
@@ -1478,13 +1990,14 @@ function updateProjectiles() {
     if (proj.y > canvas.height) proj.y -= canvas.height;
   });
   
-  // 2. Projektile, die sich gegenseitig treffen, zerstören sich
+  // 3. Projektile, die sich gegenseitig treffen, zerstören sich (Schüsse zerstören Minen/Raketen NICHT)
   const projToRemove = new Set();
   const projs = gameState.projectiles;
   for (let i = 0; i < projs.length; i++) {
     if (projToRemove.has(projs[i])) continue;
     for (let j = i + 1; j < projs.length; j++) {
       if (projToRemove.has(projs[j])) continue;
+      if (projs[i].type === 'rocket' || projs[j].type === 'rocket') continue; // Schüsse treffen Raketen nicht
       if (projs[i].owner === projs[j].owner) continue; // Eigene Schüsse zerstören sich nicht
       const dx = projs[i].x - projs[j].x;
       const dy = projs[i].y - projs[j].y;
@@ -1507,6 +2020,7 @@ function updateProjectiles() {
     for (let i = 0; i < gameState.obstacles.length; i++) {
       const obs = gameState.obstacles[i];
       if (pointInRect(proj.x, proj.y, obs.x, obs.y, obs.w, obs.h)) {
+        if (proj.type === 'rocket') playRocketExplosionSound();
         spawnExplosion(proj.x, proj.y, proj.color, 10);
         return false;
       }
@@ -1516,6 +2030,7 @@ function updateProjectiles() {
       const dx = proj.x - p.x;
       const dy = proj.y - p.y;
       if (dx * dx + dy * dy < 225) {
+        if (proj.type === 'rocket') playRocketExplosionSound();
         if (Date.now() < (p.shieldUntil || 0)) {
           spawnExplosion(proj.x, proj.y, '#44aaff', 8);
           return false;
@@ -1539,15 +2054,16 @@ function updateProjectiles() {
         const dx = proj.x - e.x;
         const dy = proj.y - e.y;
         if (dx * dx + dy * dy < 225) {
+          if (proj.type === 'rocket') playRocketExplosionSound();
           if (Date.now() < (e.shieldUntil || 0)) {
             spawnExplosion(proj.x, proj.y, '#44aaff', 8);
             return false;
           }
           const dmg = Math.max(1, Math.floor(proj.damage - e.armor / 2));
           e.hp -= dmg;
+          if (e.hp <= 0) triggerEnemyDeathExplosion(e);
           spawnExplosion(proj.x, proj.y, '#ff4757', 12);
-          const alive = enemies.filter((x) => x.hp > 0);
-          if (alive.length === 0) {
+          if (getAliveEnemiesCount() === 0) {
             endFight(true);
           }
           return false;
@@ -1562,6 +2078,7 @@ function updateProjectiles() {
         const dx = proj.x - e.x;
         const dy = proj.y - e.y;
         if (dx * dx + dy * dy < 225) {
+          if (proj.type === 'rocket') playRocketExplosionSound();
           if (Date.now() < (e.shieldUntil || 0)) {
             spawnExplosion(proj.x, proj.y, '#44aaff', 8);
             return false;
@@ -1569,10 +2086,10 @@ function updateProjectiles() {
           const dmgMult = gameState.playerRobotIndex === 1 ? 1.44 : 1.2; // Zweiter Mech: 20% mehr als erster
           const dmg = Math.max(1, Math.floor(proj.damage * dmgMult - e.armor / 2));
           e.hp -= dmg;
+          if (e.hp <= 0) triggerEnemyDeathExplosion(e);
           const hitColor = gameState.playerRobotIndex === 1 ? '#ff4757' : '#00d4aa';
           spawnExplosion(proj.x, proj.y, hitColor, 12);
-          const alive = enemies.filter((x) => x.hp > 0);
-          if (alive.length === 0) {
+          if (getAliveEnemiesCount() === 0) {
             endFight(true);
           }
           return false;
@@ -1590,18 +2107,16 @@ function render() {
   
   ctx.strokeStyle = '#1a2433';
   ctx.lineWidth = 1;
-  for (let i = 0; i < canvas.width; i += 80) {
-    ctx.beginPath();
+  ctx.beginPath();
+  for (let i = 0; i <= canvas.width; i += 80) {
     ctx.moveTo(i, 0);
     ctx.lineTo(i, canvas.height);
-    ctx.stroke();
   }
-  for (let i = 0; i < canvas.height; i += 80) {
-    ctx.beginPath();
+  for (let i = 0; i <= canvas.height; i += 80) {
     ctx.moveTo(0, i);
     ctx.lineTo(canvas.width, i);
-    ctx.stroke();
   }
+  ctx.stroke();
   
   // Countdown anzeigen
   if (gameState.countdown > 0) {
@@ -1651,7 +2166,108 @@ function render() {
     drawObstacle(obs);
   });
 
+  // Meteor-Warnzonen
+  const now = Date.now();
+  gameState.meteorWarnings.forEach((zone) => {
+    const t = Math.max(0, Math.min(1, (zone.impactAt - now) / METEOR_WARNING_MS));
+    const progress = 1 - t;
+    const pulse = 0.9 + Math.sin(now / 120) * 0.08;
+    ctx.save();
+    ctx.globalAlpha = 0.25 + (1 - t) * 0.25;
+    ctx.fillStyle = '#ff4757';
+    ctx.beginPath();
+    ctx.arc(zone.x, zone.y, zone.radius * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = '#ff1f3a';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Meteor sichtbar im Anflug (realistischer Felskörper + Feuer/Rauchschweif)
+    const mx = zone.startX + (zone.x - zone.startX) * progress;
+    const my = zone.startY + (zone.y - zone.startY) * progress;
+    const sx = zone.size || 12;
+    const travelAngle = Math.atan2(zone.y - zone.startY, zone.x - zone.startX);
+    const ang = (zone.rot || 0) + now * (zone.spin || 0.03);
+    const tailLen = 26 + sx * 1.8 + (1 - t) * 16;
+
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = 'rgba(120, 120, 120, 0.45)';
+    ctx.lineWidth = sx * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(mx - Math.cos(travelAngle) * tailLen * 1.15, my - Math.sin(travelAngle) * tailLen * 1.15);
+    ctx.lineTo(mx - Math.cos(travelAngle) * sx * 0.6, my - Math.sin(travelAngle) * sx * 0.6);
+    ctx.stroke();
+
+    const fireGrad = ctx.createLinearGradient(
+      mx - Math.cos(travelAngle) * tailLen,
+      my - Math.sin(travelAngle) * tailLen,
+      mx,
+      my
+    );
+    fireGrad.addColorStop(0, 'rgba(255, 70, 20, 0)');
+    fireGrad.addColorStop(0.35, 'rgba(255, 110, 40, 0.45)');
+    fireGrad.addColorStop(1, 'rgba(255, 220, 120, 0.95)');
+    ctx.globalAlpha = 0.95;
+    ctx.strokeStyle = fireGrad;
+    ctx.lineWidth = sx * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(mx - Math.cos(travelAngle) * tailLen, my - Math.sin(travelAngle) * tailLen);
+    ctx.lineTo(mx - Math.cos(travelAngle) * sx * 0.2, my - Math.sin(travelAngle) * sx * 0.2);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(mx, my);
+    ctx.rotate(ang);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#6f6157';
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx * 0.45, sx * 0.78);
+    ctx.lineTo(-sx * 0.35, sx * 0.92);
+    ctx.lineTo(-sx * 0.95, sx * 0.2);
+    ctx.lineTo(-sx * 0.82, -sx * 0.55);
+    ctx.lineTo(-sx * 0.15, -sx * 0.95);
+    ctx.lineTo(sx * 0.62, -sx * 0.62);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#8f7d6f';
+    ctx.beginPath();
+    ctx.arc(sx * 0.2, -sx * 0.15, sx * 0.24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#4f443e';
+    ctx.beginPath();
+    ctx.arc(-sx * 0.25, sx * 0.18, sx * 0.2, 0, Math.PI * 2);
+    ctx.arc(sx * 0.35, sx * 0.32, sx * 0.14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  });
+
   drawShield();
+
+  // Minen
+  gameState.mines.forEach((mine) => {
+    ctx.save();
+    ctx.translate(mine.x, mine.y);
+    const pulse = 0.85 + Math.sin(Date.now() / 200) * 0.15;
+    ctx.fillStyle = mine.owner === 'player' ? 'rgba(0, 212, 170, 0.9)' : 'rgba(255, 71, 87, 0.9)';
+    ctx.strokeStyle = mine.owner === 'player' ? '#00d4aa' : '#ff4757';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, MINE_RADIUS * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.arc(0, 0, MINE_RADIUS * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
 
   // Projektile
   gameState.projectiles.forEach((proj) => {
@@ -1710,6 +2326,8 @@ function gameLoop() {
     }
   }
   
+  updateMines();
+  updateMeteorStorms();
   updateProjectiles();
   updateParticles();
   
@@ -1753,7 +2371,7 @@ function endFight(won) {
   
   if (won) {
     const enemies = state.currentEnemies || [state.currentEnemy];
-    const reward = 3000;
+    const reward = state.storyMode ? enemies.reduce((s, e) => s + (e?.reward || 500), 0) : 3000;
     const scorePoints = enemies.reduce((s, e) => s + Math.round((e?.power || 0) + (e?.reward || 0) / 2), 0);
     state.money += reward;
     state.score += scorePoints;
@@ -1769,6 +2387,16 @@ function endFight(won) {
     
     if (!won && state.lives <= 0) {
       showGameOver();
+      return;
+    }
+    
+    if (state.storyMode && won) {
+      state.storyChapter++;
+      if (state.storyChapter > 10) {
+        showHappyEnd();
+      } else {
+        showStoryChapter(state.storyChapter - 1);
+      }
       return;
     }
     
@@ -1795,6 +2423,14 @@ function handleKeyDown(e) {
     e.preventDefault();
     gameState.keys[' '] = true;
   }
+  if (e.key === 'x' || e.key === 'X') {
+    e.preventDefault();
+    gameState.keys['x'] = true;
+  }
+  if (e.key === 'y' || e.key === 'Y') {
+    e.preventDefault();
+    gameState.keys['y'] = true;
+  }
   if (e.key === 'Escape') {
     e.preventDefault();
     exitFight();
@@ -1808,12 +2444,20 @@ function handleKeyUp(e) {
   if (e.key === ' ') {
     gameState.keys[' '] = false;
   }
+  if (e.key === 'x' || e.key === 'X') {
+    gameState.keys['x'] = false;
+  }
+  if (e.key === 'y' || e.key === 'Y') {
+    gameState.keys['y'] = false;
+  }
 }
 
 function fight() {
   const is1v3 = state.arenaMode === '1v3';
+  const isStory = state.storyMode;
   if (state.fightInProgress) return;
-  if (!is1v3 && !state.currentEnemy) return;
+  if (!isStory && !is1v3 && !state.currentEnemy) return;
+  if (isStory && !state.currentEnemies?.length) return;
   
   showFightOverlay();
   initCanvas();
@@ -1843,16 +2487,15 @@ function fight() {
   };
   gameState.playerRobotIndex = state.activeRobotIndex;
   
-  const opponents = is1v3 ? generateOpponents().slice(0, 3) : [state.currentEnemy];
+  const opponents = isStory ? state.currentEnemies : (is1v3 ? generateOpponents().slice(0, 3) : [state.currentEnemy]);
   state.currentEnemies = opponents;
   
-  const positions = is1v3
-    ? [
-        { x: 0.75, y: 0.25 },
-        { x: 0.85, y: 0.5 },
-        { x: 0.75, y: 0.75 },
-      ]
-    : [{ x: 0.8, y: 0.5 }];
+  const posCount = opponents.length;
+  const positions = posCount >= 3
+    ? [{ x: 0.75, y: 0.25 }, { x: 0.85, y: 0.5 }, { x: 0.75, y: 0.75 }]
+    : posCount === 2
+      ? [{ x: 0.78, y: 0.35 }, { x: 0.78, y: 0.65 }]
+      : [{ x: 0.8, y: 0.5 }];
   
   gameState.enemies = opponents.map((opp, i) => ({
     x: canvas.width * positions[i].x,
@@ -1863,7 +2506,7 @@ function fight() {
     armor: opp.armor,
     damage: opp.damage,
     speed: opp.speed,
-    reward: opp.reward,
+    reward: opp.reward ?? 500,
     name: opp.name,
     weaponId: opp.weaponId || 'weapon_cannon',
     vx: 0,
@@ -1872,19 +2515,29 @@ function fight() {
     lastShot: 0,
     shieldUntil: 0,
     retreatUntil: 0,
-    strategy: ['aggressive', 'defensive', 'evasive', 'flanker'][Math.floor(Math.random() * 4)],
-    shotCooldown: 550 + Math.floor(Math.random() * 600),  // 550–1150 ms, variiert pro Gegner
+    strategy: opp.strategy || ['aggressive', 'defensive', 'evasive', 'flanker'][Math.floor(Math.random() * 4)],
+    shotCooldown: opp.shotCooldown ?? (380 + Math.floor(Math.random() * 220)),
+    mines: 10,
+    rockets: 10,
+    lastMinePlace: 0,
+    lastRocketFire: 0,
   }));
   
   gameState.projectiles = [];
+  gameState.mines = [];
+  gameState.meteorWarnings = [];
   gameState.particles = [];
   gameState.keys = {};
   gameState.lastShot = 0;
+  gameState.lastMinePlace = 0;
+  gameState.lastRocketFire = 0;
   gameState.lastWeaponFired = 'R'; // Nächster Schuss von links
   gameState.enemyLastShot = 0;
+  gameState.nextMeteorStormAt = Date.now() + 5000;
 
   // Zufällige Hindernisse für diesen Kampf
-  generateObstacles();
+  const theme = state.storyMode && STORY_CHAPTERS[state.storyChapter - 1]?.obstacleTheme;
+  generateObstacles(theme);
   
   // Schild in der Mitte (berühren = 10s Schutz)
   gameState.shield = { x: canvas.width / 2, y: canvas.height / 2, radius: 28, active: true };
@@ -2024,10 +2677,18 @@ function resetGame() {
   state.fightInProgress = false;
   state.lives = INITIAL_STATE.lives;
   state.score = INITIAL_STATE.score;
+  state.storyMode = false;
+  state.storyChapter = 1;
+  state.playerMines = INITIAL_STATE.playerMines;
+  state.playerRockets = INITIAL_STATE.playerRockets;
 
   const gameOverScreen = document.getElementById('gameOverScreen');
+  const storyScreen = document.getElementById('storyChapterScreen');
+  const happyScreen = document.getElementById('happyEndScreen');
   const app = document.getElementById('app');
   if (gameOverScreen) gameOverScreen.classList.add('hidden');
+  if (storyScreen) storyScreen.classList.add('hidden');
+  if (happyScreen) happyScreen.classList.add('hidden');
   if (app) app.classList.remove('hidden');
 
   updateMoney();
@@ -2054,7 +2715,7 @@ function initGameOver() {
   });
 }
 
-// —— Start Screen → Intro → Spiel
+// —— Start Screen → Intro (mit Musik + Scroll) → ZUR ARENA / STORY
 function initStartScreen() {
   const startScreen = document.getElementById('startScreen');
   const startBtn = document.getElementById('startBtn');
@@ -2065,14 +2726,104 @@ function initStartScreen() {
     startMusic();
     startScreen.classList.add('hidden');
     introScreen.classList.remove('hidden');
-    playIntroSpeech();
+    introSpeechTimeout = setTimeout(playIntroSpeech, 2000);
+  });
+}
+
+function showStoryChapter(chapterIndex) {
+  const screen = document.getElementById('storyChapterScreen');
+  const app = document.getElementById('app');
+  if (!screen) return;
+  const chapter = STORY_CHAPTERS[chapterIndex];
+  if (!chapter) return;
+  document.getElementById('storyChapterTitle').textContent = `Kapitel ${chapterIndex + 1}`;
+  document.getElementById('storyChapterText').textContent = chapter.text;
+  if (app) app.classList.add('hidden');
+  screen.classList.remove('hidden');
+  state.currentEnemies = [...chapter.opponents];
+  const btn = document.getElementById('btnStoryPrepare');
+  if (btn) {
+    btn.replaceWith(btn.cloneNode(true));
+    document.getElementById('btnStoryPrepare').addEventListener('click', startStoryChapter);
+  }
+}
+
+function startStoryChapter() {
+  const screen = document.getElementById('storyChapterScreen');
+  const app = document.getElementById('app');
+  if (screen) screen.classList.add('hidden');
+  if (app) app.classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+  const garageBtn = document.querySelector('.nav-btn[data-screen="garage"]');
+  const garageScreen = document.getElementById('garage');
+  if (garageBtn) garageBtn.classList.add('active');
+  if (garageScreen) garageScreen.classList.add('active');
+  renderGarage();
+  renderArena();
+}
+
+function showHappyEnd() {
+  const screen = document.getElementById('happyEndScreen');
+  const app = document.getElementById('app');
+  const scoreEl = document.getElementById('happyEndScore');
+  const nameInput = document.getElementById('happyEndNameInput');
+  const saveBtn = document.getElementById('happyEndSaveBtn');
+  const listEl = document.getElementById('happyEndScoreList');
+  if (scoreEl) scoreEl.textContent = state.score;
+  if (screen) screen.classList.remove('hidden');
+  if (app) app.classList.add('hidden');
+  if (listEl) {
+    const scores = getHighScores();
+    listEl.innerHTML = '';
+    scores.forEach((entry, i) => {
+      const li = document.createElement('li');
+      if (entry.score === state.score) li.className = 'hs-current';
+      li.innerHTML = `<span class="hs-rank">#${i + 1}</span><span class="hs-name">${entry.name}</span><span class="hs-score">${entry.score}</span>`;
+      listEl.appendChild(li);
+    });
+    if (scores.length === 0) listEl.innerHTML = '<li style="justify-content:center;color:var(--text-dim)">Noch keine Einträge</li>';
+  }
+  if (nameInput) nameInput.value = '';
+  if (saveBtn) saveBtn.disabled = false;
+  const handleSave = () => {
+    const name = (nameInput?.value || '').trim() || 'Anonym';
+    saveHighScore(name, state.score);
+    if (listEl) {
+      const scores = getHighScores();
+      listEl.innerHTML = '';
+      scores.forEach((entry, i) => {
+        const li = document.createElement('li');
+        if (entry.score === state.score) li.className = 'hs-current';
+        li.innerHTML = `<span class="hs-rank">#${i + 1}</span><span class="hs-name">${entry.name}</span><span class="hs-score">${entry.score}</span>`;
+        listEl.appendChild(li);
+      });
+    }
+    saveBtn.disabled = true;
+    nameInput.disabled = true;
+  };
+  saveBtn?.replaceWith(saveBtn.cloneNode(true));
+  document.getElementById('happyEndSaveBtn')?.addEventListener('click', handleSave);
+  nameInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSave();
+  });
+  document.getElementById('happyEndRestartBtn')?.replaceWith(document.getElementById('happyEndRestartBtn').cloneNode(true));
+  document.getElementById('happyEndRestartBtn')?.addEventListener('click', () => {
+    resetGame();
+    const happyScreen = document.getElementById('happyEndScreen');
+    const startScreen = document.getElementById('startScreen');
+    if (happyScreen) happyScreen.classList.add('hidden');
+    if (startScreen) startScreen.classList.remove('hidden');
+    if (app) app.classList.add('hidden');
   });
 }
 
 const introSpeech = new Audio('introspeech.wav');
 introSpeech.volume = 0.9;
+let introSpeechTimeout = null;
 
 function playIntroSpeech() {
+  introSpeechTimeout = null;
   if (currentMusic) currentMusic.volume = 0.1;
   introSpeech.currentTime = 0;
   introSpeech.play().catch(() => {});
@@ -2080,6 +2831,10 @@ function playIntroSpeech() {
 }
 
 function stopIntroSpeech() {
+  if (introSpeechTimeout) {
+    clearTimeout(introSpeechTimeout);
+    introSpeechTimeout = null;
+  }
   introSpeech.pause();
   introSpeech.currentTime = 0;
   if (currentMusic) currentMusic.volume = 0.3;
@@ -2087,16 +2842,32 @@ function stopIntroSpeech() {
 
 function initIntro() {
   const introScreen = document.getElementById('introScreen');
-  const enterBtn = document.getElementById('introEnterBtn');
+  const btnZurArena = document.getElementById('btnZurArena');
+  const btnStory = document.getElementById('btnStory');
   const app = document.getElementById('app');
-  if (!introScreen || !enterBtn) return;
+  if (!introScreen) return;
 
-  enterBtn.addEventListener('click', () => {
-    stopIntroSpeech();
-    introScreen.classList.add('hidden');
-    app.classList.remove('hidden');
-    initGame();
-  });
+  if (btnZurArena) {
+    btnZurArena.addEventListener('click', () => {
+      stopIntroSpeech();
+      introScreen.classList.add('hidden');
+      app.classList.remove('hidden');
+      initGame();
+    });
+  }
+
+  if (btnStory) {
+    btnStory.addEventListener('click', () => {
+      stopIntroSpeech();
+      state.storyMode = true;
+      state.storyChapter = 1;
+      state.currentEnemies = STORY_CHAPTERS[0] ? [...STORY_CHAPTERS[0].opponents] : [];
+      introScreen.classList.add('hidden');
+      app.classList.remove('hidden');
+      initGame();
+      showStoryChapter(0);
+    });
+  }
 }
 
 function initGame() {

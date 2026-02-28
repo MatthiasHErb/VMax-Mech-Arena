@@ -33,7 +33,10 @@
           <p>Baue deinen Mech. Betritt die Arena. Werde zur Legende.</p>
         </div>
       </div>
-      <button class="intro-enter-btn" id="introEnterBtn">ARENA BETRETEN</button>
+      <div class="intro-buttons">
+        <button class="intro-enter-btn" id="btnZurArena">ZUR ARENA</button>
+        <button class="intro-enter-btn" id="btnStory">STORY</button>
+      </div>
     </div>
   </div>
 
@@ -130,7 +133,7 @@
           <div class="controls-hint" id="controlsHint">
             <p><strong>Steuerung:</strong></p>
             <p>↑↓←→ Bewegung & Drehung</p>
-            <p>Leertaste = Schießen</p>
+            <p>Leertaste = Schießen · X = Mine · Y = Rakete</p>
           </div>
         </div>
         <div class="arena-status" id="arenaStatus">
@@ -183,7 +186,41 @@
     </div>
     <canvas id="fightCanvas"></canvas>
     <div class="controls-hint fight-controls" id="fightControlsHint">
-      <p>↑↓←→ Bewegen · Leertaste Schießen · ESC Zurück</p>
+      <p>↑↓←→ Bewegen · Leertaste Schießen · X Mine · Y Rakete · ESC Zurück</p>
+      <p class="hud-ammo"><span id="hudMines">Minen: 10</span> · <span id="hudRockets">Raketen: 10</span></p>
+    </div>
+  </div>
+
+  <!-- STORY KAPITEL SCREEN -->
+  <div id="storyChapterScreen" class="story-chapter-screen hidden">
+    <div class="story-chapter-bg"></div>
+    <div class="story-chapter-content">
+      <h1 class="story-chapter-title" id="storyChapterTitle">Kapitel 1</h1>
+      <div class="story-text" id="storyChapterText"></div>
+      <button class="intro-enter-btn" id="btnStoryPrepare">KAMPF VORBEREITEN</button>
+    </div>
+  </div>
+
+  <!-- HAPPY END SCREEN -->
+  <div id="happyEndScreen" class="happyend-screen hidden">
+    <div class="happyend-bg"></div>
+    <div class="happyend-content">
+      <h1 class="happyend-title">GESCHICHTE ABGESCHLOSSEN</h1>
+      <p class="happyend-text">Du hast alle 10 Kapitel besiegt. Die Arena gehört dir!</p>
+      <div class="happyend-score">
+        <p class="happyend-score-label">Dein Score</p>
+        <p class="happyend-score-value" id="happyEndScore">0</p>
+      </div>
+      <div class="happyend-name-input">
+        <label for="happyEndNameInput">Dein Name:</label>
+        <input type="text" id="happyEndNameInput" maxlength="16" placeholder="Pilot-Name" autocomplete="off">
+        <button class="happyend-save-btn" id="happyEndSaveBtn">EINTRAGEN</button>
+      </div>
+      <div class="happyend-highscores">
+        <h2>BESTENLISTE</h2>
+        <ol class="highscore-list" id="happyEndScoreList"></ol>
+      </div>
+      <button class="gameover-restart-btn" id="happyEndRestartBtn">NEUES SPIEL</button>
     </div>
   </div>
 

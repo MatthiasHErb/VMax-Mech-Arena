@@ -133,7 +133,7 @@
 }
 
 .intro-crawl {
-  animation: introCrawl 45s linear infinite;
+  animation: introCrawl 60s linear forwards;
   padding-top: 300px;
 }
 
@@ -159,6 +159,13 @@
 @keyframes introCrawl {
   0% { transform: translateY(0); }
   100% { transform: translateY(-700px); }
+}
+
+.intro-buttons {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .intro-enter-btn {
@@ -696,6 +703,7 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
+  border-left-width: 4px;
   color: var(--text);
   cursor: pointer;
   font-weight: 500;
@@ -708,6 +716,34 @@ body {
 }
 
 .opponent-btn .power { font-size: 0.8rem; color: var(--text-dim); }
+.opponent-btn .diff-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 0.35rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+.opponent-diff-easy {
+  border-left-color: var(--accent);
+}
+.opponent-diff-easy .diff-badge {
+  background: rgba(0, 212, 170, 0.2);
+  color: var(--accent);
+}
+.opponent-diff-medium {
+  border-left-color: var(--warning);
+}
+.opponent-diff-medium .diff-badge {
+  background: rgba(255, 165, 2, 0.2);
+  color: var(--warning);
+}
+.opponent-diff-hard {
+  border-left-color: var(--danger);
+}
+.opponent-diff-hard .diff-badge {
+  background: rgba(255, 71, 87, 0.2);
+  color: var(--danger);
+}
 
 /* Buttons */
 .btn {
@@ -1041,6 +1077,12 @@ body {
   color: var(--accent);
 }
 
+.fight-controls .hud-ammo {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
 /* ═══ GAME OVER / HIGHSCORE SCREEN ═══ */
 .gameover-screen {
   position: fixed;
@@ -1234,4 +1276,199 @@ body {
   color: var(--bg-dark);
   box-shadow: 0 0 30px var(--glow);
   transform: scale(1.05);
+}
+
+/* ═══ STORY KAPITEL SCREEN ═══ */
+.story-chapter-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.story-chapter-screen.hidden {
+  display: none;
+}
+
+.story-chapter-bg {
+  position: absolute;
+  inset: 0;
+  background: url('Intro.png') center center / cover no-repeat;
+  filter: brightness(0.45);
+}
+
+.story-chapter-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.story-chapter-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-shadow: 0 0 30px var(--glow);
+  margin-bottom: 1.5rem;
+}
+
+.story-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+  white-space: pre-line;
+}
+
+/* ═══ HAPPY END SCREEN ═══ */
+.happyend-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.happyend-screen.hidden {
+  display: none;
+}
+
+.happyend-bg {
+  position: absolute;
+  inset: 0;
+  background: url('Intro.png') center center / cover no-repeat;
+  filter: brightness(0.4);
+}
+
+.happyend-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.happyend-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  text-shadow: 0 0 40px var(--glow);
+  margin-bottom: 1rem;
+}
+
+.happyend-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1.5rem;
+}
+
+.happyend-score {
+  margin-bottom: 1.5rem;
+}
+
+.happyend-score-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-bottom: 0.3rem;
+}
+
+.happyend-score-value {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 3rem;
+  color: var(--accent);
+  text-shadow: 0 0 30px var(--glow);
+}
+
+.happyend-name-input {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.happyend-name-input label {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.happyend-name-input input {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem 0.8rem;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  color: #fff;
+  outline: none;
+  width: 150px;
+  text-align: center;
+}
+
+.happyend-name-input input:focus {
+  border-color: var(--accent);
+}
+
+.happyend-save-btn {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  padding: 0.55rem 1.2rem;
+  background: var(--accent);
+  color: var(--bg-dark);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.happyend-save-btn:hover {
+  background: var(--accent-dim);
+  box-shadow: 0 0 20px var(--glow);
+}
+
+.happyend-save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.happyend-highscores {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.happyend-highscores h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  margin-bottom: 0.8rem;
 }
