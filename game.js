@@ -1077,8 +1077,11 @@ function drawMech(x, y, angle, color, size = 20, isPlayer = false, enemyIndex = 
   ctx.save();
   ctx.shadowColor = color;
   ctx.shadowBlur = 4;
+  const hasPartSprites = typeof partSprites !== 'undefined'
+    && partSprites.top
+    && Object.keys(partSprites.top).length > 0;
 
-  if (isPlayer && typeof drawPlayerMechLayered === 'function') {
+  if (isPlayer && typeof drawPlayerMechLayered === 'function' && hasPartSprites) {
     drawPlayerMechLayered(ctx, x, y, angle, size, color);
   } else if (!isPlayer && typeof drawEnemyMechSprite === 'function' && enemySprites.length > 0) {
     drawEnemyMechSprite(ctx, x, y, angle, size, enemyIndex);
@@ -3045,6 +3048,14 @@ function startDuelMatch() {
   state.gameMode = 'duel';
   duelState.enabled = true;
   duelState.round = 1;
+  if (typeof initPartSprites === 'function') {
+    const spritesMissing = typeof partSprites === 'undefined'
+      || !partSprites.top
+      || Object.keys(partSprites.top).length === 0
+      || typeof enemySprites === 'undefined'
+      || enemySprites.length === 0;
+    if (spritesMissing) initPartSprites();
+  }
   duelState.players.forEach((p) => {
     p.lives = DUEL_START_LIVES;
   });
@@ -3794,16 +3805,46 @@ function initDuelSetup() {
 
 function initIntro() {
   const introScreen = document.getElementById('introScreen');
+  const btnZurArena = document.getElementById('btnZurArena');
+  const btnStory = document.getElementById('btnStory');
   const btnDuel = document.getElementById('btnDuel');
+  const app = document.getElementById('app');
   if (!introScreen) return;
 
   initDuelSetup();
-  if (!btnDuel) return;
-  btnDuel.addEventListener('click', () => {
-    stopIntroSpeech();
-    resetDuelState();
-    showDuelSetup('Spieler 1 beginnt.');
-  });
+
+  if (btnZurArena) {
+    btnZurArena.addEventListener('click', () => {
+      stopIntroSpeech();
+      state.gameMode = 'classic';
+      state.storyMode = false;
+      introScreen.classList.add('hidden');
+      if (app) app.classList.remove('hidden');
+      initGame();
+    });
+  }
+
+  if (btnStory) {
+    btnStory.addEventListener('click', () => {
+      stopIntroSpeech();
+      state.gameMode = 'classic';
+      state.storyMode = true;
+      state.storyChapter = 1;
+      state.currentEnemies = STORY_CHAPTERS[0] ? [...STORY_CHAPTERS[0].opponents] : [];
+      introScreen.classList.add('hidden');
+      if (app) app.classList.remove('hidden');
+      initGame();
+      showStoryChapter(0);
+    });
+  }
+
+  if (btnDuel) {
+    btnDuel.addEventListener('click', () => {
+      stopIntroSpeech();
+      resetDuelState();
+      showDuelSetup('Spieler 1 beginnt.');
+    });
+  }
 }
 
 function initGame() {
