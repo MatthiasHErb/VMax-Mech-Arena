@@ -130,6 +130,9 @@ const METEOR_ZONE_RADIUS = 70;
 const METEOR_ZONES_PER_STORM = 3;
 const METEOR_STORM_MIN_DELAY = 8000;
 const METEOR_STORM_MAX_DELAY = 15000;
+const OBSTACLE_SOLID_HP = 280;
+const OBSTACLE_TUNNEL_HP = 340;
+const OBSTACLE_RAMP_HP = 300;
 
 const state = Object.assign({}, INITIAL_STATE, {
   ownedPartIds: [...INITIAL_STATE.ownedPartIds],
@@ -1321,11 +1324,29 @@ function drawHpBar(x, y, currentHp, maxHp, color, size = 20) {
   ctx.fillText(`${Math.max(0, Math.round(currentHp))}/${maxHp}`, x, y + offsetY + barHeight / 2);
 }
 
+function drawLevelIndicator(entity, color = '#9fd3ff') {
+  if (!entity || getEntityLevel(entity) !== 1) return;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.arc(entity.x, entity.y, 18, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = 'bold 10px Rajdhani';
+  ctx.textAlign = 'center';
+  ctx.fillText('L2', entity.x, entity.y - 20);
+  ctx.restore();
+}
+
 function updatePlayer() {
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   
   const p = gameState.player;
   if (!p || p.hp <= 0) return;
+  p.level = getEntityLevel(p);
   const stats = computeRobotStats();
   const maxSpeed = stats.speed * 0.18;  // Roboter langsamer als Schüsse (projSpeed 4.5)
   const acceleration = 0.08;
@@ -1379,10 +1400,11 @@ function updatePlayer() {
 
   for (let i = 0; i < gameState.obstacles.length; i++) {
     const obs = gameState.obstacles[i];
-    if (circleRectCollision(p.x, p.y, 14, obs.x, obs.y, obs.w, obs.h)) {
+    if (circleObstacleCollision(p.x, p.y, 14, obs, p.level)) {
       resolveObstacleCollision(p, 14, obs);
     }
   }
+  applyRampTransitions(p);
 
   // Schild berühren = 10s Schutz
   if (gameState.countdown === 0 && gameState.shield?.active) {
@@ -1427,6 +1449,7 @@ function updatePlayer() {
           weaponId: weapon.id,
           color: projColor,
           totalDist: 0,
+          level: p.level,
         });
       }
       playShotSound();
@@ -1442,6 +1465,7 @@ function updatePlayer() {
       y: p.y + Math.sin(p.angle) * 24,
       owner: 'player',
       placedAt: now,
+      level: p.level,
     });
     playMineSound();
   }
@@ -1464,6 +1488,7 @@ function updatePlayer() {
       type: 'rocket',
       color: projColor,
       totalDist: 0,
+      level: p.level,
     });
     playRocketSound();
   }
@@ -1472,6 +1497,7 @@ function updatePlayer() {
 function updateHumanControlledPlayer(actor, controls, ownerTag, color) {
   if (gameState.countdown > 0 || gameState.fightEnded) return;
   if (!actor || actor.hp <= 0) return;
+  actor.level = getEntityLevel(actor);
 
   const stats = actor.stats || { hp: 220, armor: 60, damage: 28, speed: 8 };
   const maxSpeed = stats.speed * 0.18;
@@ -1517,10 +1543,11 @@ function updateHumanControlledPlayer(actor, controls, ownerTag, color) {
 
   for (let i = 0; i < gameState.obstacles.length; i++) {
     const obs = gameState.obstacles[i];
-    if (circleRectCollision(actor.x, actor.y, 14, obs.x, obs.y, obs.w, obs.h)) {
+    if (circleObstacleCollision(actor.x, actor.y, 14, obs, actor.level)) {
       resolveObstacleCollision(actor, 14, obs);
     }
   }
+  applyRampTransitions(actor);
 
   if (gameState.countdown === 0 && gameState.shield?.active) {
     const sh = gameState.shield;
@@ -1549,6 +1576,7 @@ function updateHumanControlledPlayer(actor, controls, ownerTag, color) {
       weaponId,
       color,
       totalDist: 0,
+      level: actor.level,
     });
     playShotSound();
   }
@@ -1561,6 +1589,7 @@ function updateHumanControlledPlayer(actor, controls, ownerTag, color) {
       y: actor.y + Math.sin(actor.angle) * 24,
       owner: ownerTag,
       placedAt: now,
+      level: actor.level,
     });
     playMineSound();
   }
@@ -1579,6 +1608,7 @@ function updateHumanControlledPlayer(actor, controls, ownerTag, color) {
       type: 'rocket',
       color,
       totalDist: 0,
+      level: actor.level,
     });
     playRocketSound();
   }
@@ -1603,6 +1633,7 @@ function updateAlly() {
   if (state.arenaMode !== '2v2' || gameState.countdown > 0 || gameState.fightEnded) return;
   const a = gameState.ally;
   if (!a || a.hp <= 0) return;
+  a.level = getEntityLevel(a);
 
   const enemies = gameState.enemies.filter((e) => e.hp > 0);
   if (enemies.length === 0) return;
@@ -1651,10 +1682,11 @@ function updateAlly() {
   if (a.y > canvas.height) a.y -= canvas.height;
   for (let i = 0; i < gameState.obstacles.length; i++) {
     const obs = gameState.obstacles[i];
-    if (circleRectCollision(a.x, a.y, 14, obs.x, obs.y, obs.w, obs.h)) {
+    if (circleObstacleCollision(a.x, a.y, 14, obs, a.level)) {
       resolveObstacleCollision(a, 14, obs);
     }
   }
+  applyRampTransitions(a);
 
   a.thrust += ((Math.min(Math.hypot(a.vx, a.vy) / Math.max(0.1, maxSpeed) + 0.2, 1)) - a.thrust) * 0.12;
 
@@ -1674,6 +1706,7 @@ function updateAlly() {
       weaponId,
       color: '#44aaff',
       totalDist: 0,
+      level: a.level,
     });
   }
 }
@@ -1687,6 +1720,7 @@ function updateEnemies() {
   
   gameState.enemies.forEach((e, eIdx) => {
     if (e.hp <= 0) return;
+  e.level = getEntityLevel(e);
   
   const maxSpeed = e.speed * 0.34;
   const acceleration = 0.12;       // Schnellere Reaktion
@@ -1750,7 +1784,7 @@ function updateEnemies() {
   if (e._targetSwitchAt === undefined || now > e._targetSwitchAt) {
     e._targetSwitchAt = now + 1200 + Math.random() * 1800;
     const targets = [{ player: true }];
-    if (state.arenaMode === '2v2' && ally && ally.hp > 0) {
+    if ((state.arenaMode === '2v2' || state.gameMode === 'duel') && ally && ally.hp > 0) {
       targets.push({ ally: true });
     }
     if (is1v3) {
@@ -1784,6 +1818,16 @@ function updateEnemies() {
     targetX = fallback.x;
     targetY = fallback.y;
   }
+  const pLevelOk = p && p.hp > 0 && getEntityLevel(p) === getEntityLevel(e);
+  const allyLevelOk = ally && ally.hp > 0 && getEntityLevel(ally) === getEntityLevel(e);
+  if (!pLevelOk && !allyLevelOk) return;
+  if (allyLevelOk && (!pLevelOk || (e._targetAlly && ally))) {
+    targetX = ally.x;
+    targetY = ally.y;
+  } else if (pLevelOk) {
+    targetX = p.x;
+    targetY = p.y;
+  }
   const dist = wrapDist(e.x, e.y, targetX, targetY);
   
   let dx = targetX - e.x;
@@ -1816,7 +1860,7 @@ function updateEnemies() {
       const odx = e.x - obs.x;
       const ody = e.y - obs.y;
       const oDist = Math.sqrt(odx * odx + ody * ody);
-      if (oDist < 80 || circleRectCollision(futureX, futureY, 14, obs.x, obs.y, obs.w, obs.h)) {
+      if (oDist < 80 || circleObstacleCollision(futureX, futureY, 14, obs, e.level)) {
         const avoidStrength = Math.max(0, 1 - oDist / 100);
         avoidX += (odx / oDist) * avoidStrength * maxSpeed * 1.5;
         avoidY += (ody / oDist) * avoidStrength * maxSpeed * 1.5;
@@ -1870,10 +1914,11 @@ function updateEnemies() {
 
   for (let i = 0; i < gameState.obstacles.length; i++) {
     const obs = gameState.obstacles[i];
-    if (circleRectCollision(e.x, e.y, 14, obs.x, obs.y, obs.w, obs.h)) {
+    if (circleObstacleCollision(e.x, e.y, 14, obs, e.level)) {
       resolveObstacleCollision(e, 14, obs);
     }
   }
+  applyRampTransitions(e);
 
   // Schild berühren = 10s Schutz
   if (gameState.countdown === 0 && gameState.shield?.active) {
@@ -1897,6 +1942,7 @@ function updateEnemies() {
       y: e.y + Math.sin(e.angle) * 24,
       owner: 'enemy',
       placedAt: now,
+      level: e.level,
     });
     playMineSound();
   }
@@ -1919,6 +1965,7 @@ function updateEnemies() {
       type: 'rocket',
       color: '#ff4757',
       totalDist: 0,
+      level: e.level,
     });
     playRocketSound();
   }
@@ -1947,6 +1994,7 @@ function updateEnemies() {
         weaponId,
         color: '#ff4757',
         totalDist: 0,
+        level: e.level,
       };
       gameState.projectiles.push(proj);
     }
@@ -1968,6 +2016,9 @@ function generateObstacles(theme) {
   const colors = theme?.colors || ['#3a4555','#4a5568'];
   const sizeW = sizeRange.maxW - sizeRange.minW;
   const sizeH = sizeRange.maxH - sizeRange.minH;
+  const forcedTypes = count >= 8
+    ? ['tunnel', 'ramp', 'tunnel', 'ramp']
+    : ['tunnel', 'ramp', 'tunnel'];
 
   for (let i = 0; i < count; i++) {
     let x, y, w, h;
@@ -1985,7 +2036,45 @@ function generateObstacles(theme) {
     );
 
     const color = colors[Math.floor(Math.random() * colors.length)];
-    obstacles.push({ x, y, w, h, color });
+    const typeRoll = Math.random();
+    const forcedType = i < forcedTypes.length ? forcedTypes[i] : null;
+    const type = forcedType || (typeRoll < 0.24 ? 'tunnel' : typeRoll < 0.48 ? 'ramp' : 'solid');
+    if (type === 'tunnel') {
+      w = Math.max(w, 58);
+      h = Math.max(h, 50);
+    }
+    if (type === 'ramp') {
+      w = Math.max(w, 52);
+      h = Math.max(h, 44);
+    }
+    const hp = type === 'tunnel' ? OBSTACLE_TUNNEL_HP : type === 'ramp' ? OBSTACLE_RAMP_HP : OBSTACLE_SOLID_HP;
+    const obs = {
+      id: `obs_${i}_${Math.floor(Math.random() * 9999)}`,
+      type,
+      x,
+      y,
+      w,
+      h,
+      color,
+      hp,
+      maxHp: hp,
+      destructible: true,
+      destroyed: false,
+      level: type === 'ramp' ? 'both' : 0,
+    };
+
+    if (type === 'tunnel') {
+      const vertical = Math.random() < 0.5;
+      obs.tunnelRect = vertical
+        ? { x, y, w: Math.max(24, Math.round(w * 0.56)), h: h + 2 }
+        : { x, y, w: w + 2, h: Math.max(24, Math.round(h * 0.56)) };
+    } else if (type === 'ramp') {
+      // Rampen sollen zuverlässig befahrbar sein: ganzer Rampenkörper zählt als Fahrfläche.
+      obs.rampRect = { x, y, w: w + 2, h: h + 2 };
+      obs.fromLevel = 0;
+      obs.toLevel = 1;
+    }
+    obstacles.push(obs);
   }
 
   gameState.obstacles = obstacles;
@@ -2005,6 +2094,79 @@ function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
   const dx = cx - closestX;
   const dy = cy - closestY;
   return dx * dx + dy * dy < radius * radius;
+}
+
+function getEntityLevel(entity) {
+  return entity?.level === 1 ? 1 : 0;
+}
+
+function obstacleSupportsLevel(obs, level) {
+  if (!obs) return false;
+  if (obs.level === 'both') return true;
+  return (obs.level ?? 0) === level;
+}
+
+function isInObstaclePassage(obs, x, y, radius = 0) {
+  if (!obs || obs.destroyed) return false;
+  const entryPad = 6;
+  if (obs.type === 'tunnel' && obs.tunnelRect) {
+    if (radius > 0) {
+      return circleRectCollision(
+        x,
+        y,
+        radius,
+        obs.tunnelRect.x,
+        obs.tunnelRect.y,
+        obs.tunnelRect.w + entryPad * 2,
+        obs.tunnelRect.h + entryPad * 2
+      );
+    }
+    return pointInRect(
+      x,
+      y,
+      obs.tunnelRect.x,
+      obs.tunnelRect.y,
+      obs.tunnelRect.w + entryPad * 2,
+      obs.tunnelRect.h + entryPad * 2
+    );
+  }
+  if (obs.type === 'ramp' && obs.rampRect) {
+    if (radius > 0) {
+      return circleRectCollision(
+        x,
+        y,
+        radius,
+        obs.rampRect.x,
+        obs.rampRect.y,
+        obs.rampRect.w + entryPad * 2,
+        obs.rampRect.h + entryPad * 2
+      );
+    }
+    return pointInRect(
+      x,
+      y,
+      obs.rampRect.x,
+      obs.rampRect.y,
+      obs.rampRect.w + entryPad * 2,
+      obs.rampRect.h + entryPad * 2
+    );
+  }
+  return false;
+}
+
+function pointInObstacleSolid(px, py, obs, level = 0) {
+  if (!obs || obs.destroyed) return false;
+  if (!obstacleSupportsLevel(obs, level)) return false;
+  if (!pointInRect(px, py, obs.x, obs.y, obs.w, obs.h)) return false;
+  return !isInObstaclePassage(obs, px, py);
+}
+
+function circleObstacleCollision(cx, cy, radius, obs, level = 0) {
+  if (!obs || obs.destroyed) return false;
+  if (!obstacleSupportsLevel(obs, level)) return false;
+  if (!circleRectCollision(cx, cy, radius, obs.x, obs.y, obs.w, obs.h)) return false;
+  if (isInObstaclePassage(obs, cx, cy, radius)) return false;
+  return true;
 }
 
 function resolveObstacleCollision(robot, radius, obs) {
@@ -2035,6 +2197,31 @@ function resolveObstacleCollision(robot, radius, obs) {
   if (velDot < 0) {
     robot.vx -= velDot * dx;
     robot.vy -= velDot * dy;
+  }
+}
+
+function applyRampTransitions(entity) {
+  if (!entity || entity.hp <= 0) return;
+  const now = Date.now();
+  if (!entity._rampCooldownUntil) entity._rampCooldownUntil = 0;
+  for (let i = 0; i < gameState.obstacles.length; i++) {
+    const obs = gameState.obstacles[i];
+    if (!obs || obs.type !== 'ramp' || obs.destroyed || !obs.rampRect) continue;
+    if (!pointInRect(entity.x, entity.y, obs.rampRect.x, obs.rampRect.y, obs.rampRect.w, obs.rampRect.h)) continue;
+    if (now < entity._rampCooldownUntil) continue;
+    entity.level = getEntityLevel(entity) === obs.fromLevel ? obs.toLevel : obs.fromLevel;
+    entity._rampCooldownUntil = now + 500;
+    break;
+  }
+}
+
+function damageObstacle(obs, dmg, hitX, hitY, color = '#ffaa00') {
+  if (!obs || !obs.destructible || obs.destroyed) return;
+  obs.hp = Math.max(0, (obs.hp ?? obs.maxHp ?? 0) - Math.max(1, Math.round(dmg)));
+  spawnExplosion(hitX, hitY, color, 5);
+  if (obs.hp <= 0) {
+    obs.destroyed = true;
+    spawnExplosion(obs.x, obs.y, '#c17f59', 14);
   }
 }
 
@@ -2104,16 +2291,115 @@ function drawShield() {
 }
 
 function drawObstacle(obs) {
+  if (!obs) return;
   const x = obs.x - obs.w / 2;
   const y = obs.y - obs.h / 2;
   const baseColor = obs.color || '#3a4555';
-  ctx.fillStyle = baseColor;
-  ctx.fillRect(x, y, obs.w, obs.h);
-  ctx.strokeStyle = '#4a5568';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, obs.w, obs.h);
-  ctx.fillStyle = 'rgba(255,255,255,0.05)';
-  ctx.fillRect(x + 2, y + 2, obs.w - 4, obs.h - 4);
+  if (obs.destroyed) {
+    ctx.fillStyle = 'rgba(110,95,80,0.55)';
+    ctx.fillRect(x, y, obs.w, obs.h);
+    ctx.strokeStyle = 'rgba(170,130,100,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x, y, obs.w, obs.h);
+    ctx.strokeStyle = 'rgba(60,40,30,0.65)';
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y + 6);
+    ctx.lineTo(x + obs.w - 5, y + obs.h - 7);
+    ctx.moveTo(x + obs.w - 10, y + 8);
+    ctx.lineTo(x + 8, y + obs.h - 6);
+    ctx.stroke();
+    return;
+  }
+
+  if (obs.type === 'tunnel') {
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(x, y, obs.w, obs.h);
+    // Dezente Metall-Highlights
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(x + 2, y + 2, obs.w - 4, Math.max(4, obs.h * 0.2));
+    if (obs.tunnelRect) {
+      const tx = obs.tunnelRect.x - obs.tunnelRect.w / 2;
+      const ty = obs.tunnelRect.y - obs.tunnelRect.h / 2;
+      ctx.fillStyle = 'rgba(12,16,24,0.95)';
+      ctx.fillRect(tx, ty, obs.tunnelRect.w, obs.tunnelRect.h);
+      ctx.fillStyle = 'rgba(25,35,52,0.65)';
+      ctx.fillRect(tx + 2, ty + 2, Math.max(0, obs.tunnelRect.w - 4), Math.max(0, obs.tunnelRect.h - 4));
+      ctx.strokeStyle = 'rgba(170,200,255,0.45)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(tx, ty, obs.tunnelRect.w, obs.tunnelRect.h);
+      // Kanten als Tunnelöffnung
+      ctx.strokeStyle = 'rgba(220,235,255,0.35)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(tx + 3, ty + 3, Math.max(0, obs.tunnelRect.w - 6), Math.max(0, obs.tunnelRect.h - 6));
+    }
+    ctx.strokeStyle = '#5d6d84';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, obs.w, obs.h);
+  } else if (obs.type === 'ramp') {
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(x, y, obs.w, obs.h);
+    const grad = ctx.createLinearGradient(x, y + obs.h, x, y);
+    grad.addColorStop(0, 'rgba(255,255,255,0.03)');
+    grad.addColorStop(1, 'rgba(255,255,255,0.3)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, obs.w, obs.h);
+    // Lamellen-/Stufenlook
+    ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+    ctx.lineWidth = 1;
+    for (let ryLine = y + obs.h - 6; ryLine > y + 6; ryLine -= 6) {
+      ctx.beginPath();
+      ctx.moveTo(x + 6, ryLine);
+      ctx.lineTo(x + obs.w - 6, ryLine - 4);
+      ctx.stroke();
+    }
+    if (obs.rampRect) {
+      const rx = obs.rampRect.x - obs.rampRect.w / 2;
+      const ry = obs.rampRect.y - obs.rampRect.h / 2;
+      ctx.strokeStyle = 'rgba(200,255,210,0.8)';
+      ctx.setLineDash([6, 5]);
+      ctx.lineWidth = 1.7;
+      ctx.strokeRect(rx, ry, obs.rampRect.w, obs.rampRect.h);
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(170,220,180,0.15)';
+      ctx.fillRect(rx, ry, obs.rampRect.w, obs.rampRect.h);
+    }
+    ctx.strokeStyle = '#6a8b72';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, obs.w, obs.h);
+    ctx.strokeStyle = 'rgba(220,255,200,0.92)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(x + 7, y + obs.h - 7);
+    ctx.lineTo(x + obs.w - 7, y + 7);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(x, y, obs.w, obs.h);
+    // Klassische Gebäude mit Fenster-/Panel-Look
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    const cols = Math.max(2, Math.floor(obs.w / 14));
+    const rows = Math.max(2, Math.floor(obs.h / 12));
+    const cellW = (obs.w - 8) / cols;
+    const cellH = (obs.h - 8) / rows;
+    for (let cx = 0; cx < cols; cx++) {
+      for (let cy = 0; cy < rows; cy++) {
+        if ((cx + cy) % 2 === 0) {
+          ctx.fillRect(x + 4 + cx * cellW, y + 4 + cy * cellH, Math.max(2, cellW - 2), Math.max(2, cellH - 2));
+        }
+      }
+    }
+    ctx.strokeStyle = '#4a5568';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, obs.w, obs.h);
+  }
+
+  if ((obs.maxHp || 0) > 0) {
+    const hpPct = Math.max(0, (obs.hp || 0) / obs.maxHp);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(x + 4, y - 7, obs.w - 8, 4);
+    ctx.fillStyle = hpPct > 0.55 ? '#49d17d' : hpPct > 0.25 ? '#f0b14a' : '#e25a5a';
+    ctx.fillRect(x + 4, y - 7, (obs.w - 8) * hpPct, 4);
+  }
 }
 
 function checkCollision(robot1, robot2, radius1 = 14, radius2 = 14) {
@@ -2213,12 +2499,26 @@ function updateMines() {
   const hitRadius = MINE_RADIUS + 14;
 
   const now = Date.now();
-  for (let i = 0; i < gameState.mines.length; i++) {
+  mineLoop: for (let i = 0; i < gameState.mines.length; i++) {
     const mine = gameState.mines[i];
     const distTo = (x, y) => Math.hypot(mine.x - x, mine.y - y);
     const isArmed = !mine.placedAt || now - mine.placedAt > MINE_ARMING_MS;
+    const mineLevel = mine.level ?? 0;
 
-    if (isArmed && p && p.hp > 0 && distTo(p.x, p.y) < hitRadius) {
+    if (isArmed) {
+      for (let o = 0; o < gameState.obstacles.length; o++) {
+        const obs = gameState.obstacles[o];
+        if (pointInObstacleSolid(mine.x, mine.y, obs, mineLevel)) {
+          minesToRemove.push(mine);
+          damageObstacle(obs, MINE_DAMAGE * 0.75, mine.x, mine.y, '#ffaa00');
+          spawnExplosion(mine.x, mine.y, '#ffaa00', 14);
+          playMineExplosionSound();
+          continue mineLoop;
+        }
+      }
+    }
+
+    if (isArmed && p && p.hp > 0 && getEntityLevel(p) === mineLevel && distTo(p.x, p.y) < hitRadius) {
       minesToRemove.push(mine);
       if (Date.now() < (p.shieldUntil || 0)) {
         spawnExplosion(mine.x, mine.y, '#ffaa00', 12);
@@ -2233,7 +2533,7 @@ function updateMines() {
       continue;
     }
 
-    if (isArmed && ally && ally.hp > 0 && distTo(ally.x, ally.y) < hitRadius) {
+    if (isArmed && ally && ally.hp > 0 && getEntityLevel(ally) === mineLevel && distTo(ally.x, ally.y) < hitRadius) {
       minesToRemove.push(mine);
       if (Date.now() < (ally.shieldUntil || 0)) {
         spawnExplosion(mine.x, mine.y, '#ffaa00', 12);
@@ -2252,7 +2552,7 @@ function updateMines() {
       for (let j = 0; j < enemies.length; j++) {
         const e = enemies[j];
         if (e.hp <= 0) continue;
-        if (distTo(e.x, e.y) < hitRadius) {
+        if (getEntityLevel(e) === mineLevel && distTo(e.x, e.y) < hitRadius) {
           minesToRemove.push(mine);
           if (Date.now() < (e.shieldUntil || 0)) {
             spawnExplosion(mine.x, mine.y, '#ffaa00', 12);
@@ -2385,11 +2685,12 @@ function updateProjectiles() {
         if (enemies?.length) {
           enemies.forEach((e) => {
             if (e.hp <= 0) return;
+            if ((proj.level ?? 0) !== getEntityLevel(e)) return;
             const { dist } = wrapDist(proj.x, proj.y, e.x, e.y);
             if (dist < best) { best = dist; tx = e.x; ty = e.y; }
           });
         }
-        if (isDuel && ally && ally.hp > 0) {
+        if (isDuel && ally && ally.hp > 0 && (proj.level ?? 0) === getEntityLevel(ally)) {
           const { dist } = wrapDist(proj.x, proj.y, ally.x, ally.y);
           if (dist < best) { best = dist; tx = ally.x; ty = ally.y; }
         }
@@ -2413,11 +2714,12 @@ function updateProjectiles() {
         if (enemies?.length) {
           enemies.forEach((e) => {
             if (e.hp <= 0) return;
+            if ((proj.level ?? 0) !== getEntityLevel(e)) return;
             const { dist } = wrapDist(proj.x, proj.y, e.x, e.y);
             if (dist < best2) { best2 = dist; tx2 = e.x; ty2 = e.y; }
           });
         }
-        if (isDuel && p && p.hp > 0) {
+        if (isDuel && p && p.hp > 0 && (proj.level ?? 0) === getEntityLevel(p)) {
           const { dist } = wrapDist(proj.x, proj.y, p.x, p.y);
           if (dist < best2) { best2 = dist; tx2 = p.x; ty2 = p.y; }
         }
@@ -2442,6 +2744,12 @@ function updateProjectiles() {
           const toA = wrapDist(proj.x, proj.y, ally.x, ally.y).dist;
           target = toP <= toA ? p : ally;
         }
+        if (!target || (proj.level ?? 0) !== getEntityLevel(target)) {
+          if (p && p.hp > 0 && (proj.level ?? 0) === getEntityLevel(p)) target = p;
+          else if (ally && ally.hp > 0 && (proj.level ?? 0) === getEntityLevel(ally)) target = ally;
+          else target = null;
+        }
+        if (!target) return;
         const { dx, dy, dist } = wrapDist(proj.x, proj.y, target.x, target.y);
         if (dist > 5) {
           const wantAngle = Math.atan2(dy, dx);
@@ -2461,6 +2769,7 @@ function updateProjectiles() {
   // 2. Alle Projektile bewegen
   const maxDist = Math.max(canvas.width, canvas.height) * 0.5;
   gameState.projectiles.forEach((proj) => {
+    if (proj.level === undefined) proj.level = 0;
     const dist = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy);
     proj.totalDist = (proj.totalDist || 0) + dist;
     proj.prevX = proj.x;
@@ -2483,6 +2792,7 @@ function updateProjectiles() {
       if (projs[i].type === 'rocket' || projs[j].type === 'rocket') continue; // Schüsse treffen Raketen nicht
       if ((projs[i].owner === 'player' || projs[i].owner === 'ally') && (projs[j].owner === 'player' || projs[j].owner === 'ally')) continue;
       if (projs[i].owner === projs[j].owner) continue; // Eigene Schüsse zerstören sich nicht
+      if ((projs[i].level ?? 0) !== (projs[j].level ?? 0)) continue;
       const dx = projs[i].x - projs[j].x;
       const dy = projs[i].y - projs[j].y;
       if (dx * dx + dy * dy < 400) { // ~20px Kollisionsradius
@@ -2503,7 +2813,25 @@ function updateProjectiles() {
     // Kollision mit Hindernissen
     for (let i = 0; i < gameState.obstacles.length; i++) {
       const obs = gameState.obstacles[i];
-      if (pointInRect(proj.x, proj.y, obs.x, obs.y, obs.w, obs.h)) {
+      if (!obs || obs.destroyed) continue;
+
+      // Rampen blocken Projektile immer: Schüsse sollen dort einschlagen
+      // und nicht entlang der Rampe "nach oben gleiten".
+      if (obs.type === 'ramp' && pointInRect(proj.x, proj.y, obs.x, obs.y, obs.w, obs.h)) {
+        const obstacleDamage = proj.type === 'rocket' ? proj.damage * 1.35 : Math.max(6, proj.damage * 0.45);
+        damageObstacle(obs, obstacleDamage, proj.x, proj.y, proj.color || '#ffaa00');
+        if (proj.type === 'rocket') {
+          playRocketExplosionSound();
+          spawnExplosion(proj.x, proj.y, proj.color, 10);
+          return false;
+        }
+        spawnExplosion(proj.x, proj.y, proj.color, 8);
+        return false;
+      }
+
+      if (pointInObstacleSolid(proj.x, proj.y, obs, proj.level ?? 0)) {
+        const obstacleDamage = proj.type === 'rocket' ? proj.damage * 1.35 : Math.max(6, proj.damage * 0.45);
+        damageObstacle(obs, obstacleDamage, proj.x, proj.y, proj.color || '#ffaa00');
         if (proj.type === 'rocket') {
           playRocketExplosionSound();
           spawnExplosion(proj.x, proj.y, proj.color, 10);
@@ -2516,7 +2844,7 @@ function updateProjectiles() {
       }
     }
 
-    if (isDuel && proj.owner === 'player' && ally && ally.hp > 0) {
+    if (isDuel && proj.owner === 'player' && ally && ally.hp > 0 && (proj.level ?? 0) === getEntityLevel(ally)) {
       const dx = proj.x - ally.x;
       const dy = proj.y - ally.y;
       if (dx * dx + dy * dy < 225) {
@@ -2531,7 +2859,7 @@ function updateProjectiles() {
         return false;
       }
     }
-    if (isDuel && proj.owner === 'ally' && p && p.hp > 0) {
+    if (isDuel && proj.owner === 'ally' && p && p.hp > 0 && (proj.level ?? 0) === getEntityLevel(p)) {
       const dx = proj.x - p.x;
       const dy = proj.y - p.y;
       if (dx * dx + dy * dy < 225) {
@@ -2548,7 +2876,7 @@ function updateProjectiles() {
       }
     }
     
-    if (proj.owner === 'enemy' && p) {
+    if (proj.owner === 'enemy' && p && (proj.level ?? 0) === getEntityLevel(p)) {
       const dx = proj.x - p.x;
       const dy = proj.y - p.y;
       if (dx * dx + dy * dy < 225) {
@@ -2568,7 +2896,7 @@ function updateProjectiles() {
       }
     }
 
-    if (proj.owner === 'enemy' && ally && ally.hp > 0) {
+    if (proj.owner === 'enemy' && ally && ally.hp > 0 && (proj.level ?? 0) === getEntityLevel(ally)) {
       const dx = proj.x - ally.x;
       const dy = proj.y - ally.y;
       if (dx * dx + dy * dy < 225) {
@@ -2592,7 +2920,7 @@ function updateProjectiles() {
         if (e.hp <= 0) continue;
         const dx = proj.x - e.x;
         const dy = proj.y - e.y;
-        if (dx * dx + dy * dy < 225) {
+        if ((proj.level ?? 0) === getEntityLevel(e) && dx * dx + dy * dy < 225) {
           if (proj.type === 'rocket') playRocketExplosionSound();
           if (Date.now() < (e.shieldUntil || 0)) {
             spawnExplosion(proj.x, proj.y, '#44aaff', 8);
@@ -2616,7 +2944,7 @@ function updateProjectiles() {
         if (e.hp <= 0) continue;
         const dx = proj.x - e.x;
         const dy = proj.y - e.y;
-        if (dx * dx + dy * dy < 225) {
+        if ((proj.level ?? 0) === getEntityLevel(e) && dx * dx + dy * dy < 225) {
           if (proj.type === 'rocket') playRocketExplosionSound();
           if (Date.now() < (e.shieldUntil || 0)) {
             spawnExplosion(proj.x, proj.y, '#44aaff', 8);
@@ -2829,6 +3157,7 @@ function render() {
     if (e.hp > 0) {
       if (Date.now() < (e.shieldUntil || 0)) drawShieldRing(e.x, e.y, 20);
       drawMech(e.x, e.y, e.angle, '#ff4757', 14, false, e.spriteIndex || 0, e.thrust || 0);
+      drawLevelIndicator(e, 'rgba(255,120,120,0.9)');
       drawHpBar(e.x, e.y, e.hp, e.maxHp, '#ff4757', 14);
     }
   });
@@ -2836,6 +3165,7 @@ function render() {
   if (gameState.ally && gameState.ally.hp > 0) {
     if (Date.now() < (gameState.ally.shieldUntil || 0)) drawShieldRing(gameState.ally.x, gameState.ally.y, 20);
     drawMech(gameState.ally.x, gameState.ally.y, gameState.ally.angle, '#44aaff', 14, true, 0, gameState.ally.thrust || 0);
+    drawLevelIndicator(gameState.ally, 'rgba(140,190,255,0.9)');
     drawHpBar(gameState.ally.x, gameState.ally.y, gameState.ally.hp, gameState.ally.maxHp, '#44aaff', 14);
   }
   
@@ -2845,6 +3175,7 @@ function render() {
     const isSecondMech = gameState.playerRobotIndex === 1;
     const playerColor = isSecondMech ? '#ff4757' : '#00d4aa';
     drawMech(gameState.player.x, gameState.player.y, gameState.player.angle, playerColor, 14, true, 0, gameState.player.thrust || 0);
+    drawLevelIndicator(gameState.player, 'rgba(130,255,200,0.9)');
     drawHpBar(gameState.player.x, gameState.player.y, gameState.player.hp, gameState.player.maxHp, playerColor, 14);
   }
 
@@ -2874,21 +3205,21 @@ function gameLoop() {
   
   if (!gameState.fightEnded && gameState.countdown === 0) {
     gameState.enemies.forEach((e) => {
-      if (gameState.player?.hp > 0 && e.hp > 0 && checkCollision(gameState.player, e)) {
+      if (gameState.player?.hp > 0 && e.hp > 0 && getEntityLevel(gameState.player) === getEntityLevel(e) && checkCollision(gameState.player, e)) {
         resolveCollision(gameState.player, e);
       }
-      if (gameState.ally?.hp > 0 && e.hp > 0 && checkCollision(gameState.ally, e)) {
+      if (gameState.ally?.hp > 0 && e.hp > 0 && getEntityLevel(gameState.ally) === getEntityLevel(e) && checkCollision(gameState.ally, e)) {
         resolveCollision(gameState.ally, e);
       }
     });
-    if (gameState.player?.hp > 0 && gameState.ally?.hp > 0 && checkCollision(gameState.player, gameState.ally)) {
+    if (gameState.player?.hp > 0 && gameState.ally?.hp > 0 && getEntityLevel(gameState.player) === getEntityLevel(gameState.ally) && checkCollision(gameState.player, gameState.ally)) {
       resolveCollision(gameState.player, gameState.ally);
     }
     for (let i = 0; i < gameState.enemies.length; i++) {
       for (let j = i + 1; j < gameState.enemies.length; j++) {
         const a = gameState.enemies[i];
         const b = gameState.enemies[j];
-        if (a.hp > 0 && b.hp > 0 && checkCollision(a, b)) {
+        if (a.hp > 0 && b.hp > 0 && getEntityLevel(a) === getEntityLevel(b) && checkCollision(a, b)) {
           resolveCollision(a, b);
         }
       }
@@ -3130,6 +3461,7 @@ function startDuelRound() {
     vy: 0,
     thrust: 0,
     shieldUntil: 0,
+    level: 0,
     lastShot: 0,
     lastMinePlace: 0,
     lastRocketFire: 0,
@@ -3153,6 +3485,7 @@ function startDuelRound() {
     vy: 0,
     thrust: 0,
     shieldUntil: 0,
+    level: 0,
     lastShot: 0,
     lastMinePlace: 0,
     lastRocketFire: 0,
@@ -3185,6 +3518,7 @@ function startDuelRound() {
     spriteIndex: Math.floor(Math.random() * 3),
     lastShot: 0,
     shieldUntil: 0,
+    level: 0,
     retreatUntil: 0,
     strategy: opp.strategy || 'aggressive',
     shotCooldown: opp.shotCooldown ?? 500,
@@ -3267,6 +3601,7 @@ function fight() {
     vx: 0,
     vy: 0,
     shieldUntil: 0,
+    level: 0,
   };
   gameState.playerRobotIndex = state.activeRobotIndex;
   gameState.ally = null;
@@ -3284,6 +3619,7 @@ function fight() {
       vy: 0,
       thrust: 0,
       shieldUntil: 0,
+      level: 0,
       lastShot: 0,
     };
   }
@@ -3317,6 +3653,7 @@ function fight() {
     spriteIndex: Math.floor(Math.random() * 3),
     lastShot: 0,
     shieldUntil: 0,
+    level: 0,
     retreatUntil: 0,
     strategy: opp.strategy || ['aggressive', 'defensive', 'evasive', 'flanker'][Math.floor(Math.random() * 4)],
     shotCooldown: opp.shotCooldown ?? (380 + Math.floor(Math.random() * 220)),
