@@ -34,9 +34,49 @@
         </div>
       </div>
       <div class="intro-buttons">
-        <button class="intro-enter-btn" id="btnZurArena">ZUR ARENA</button>
-        <button class="intro-enter-btn" id="btnStory">STORY</button>
+        <button class="intro-enter-btn" id="btnDuel">DUELL</button>
       </div>
+    </div>
+  </div>
+
+  <div id="duelSetupScreen" class="duel-setup-screen hidden">
+    <div class="duel-setup-bg"></div>
+    <div class="duel-setup-content">
+      <h1 class="duel-setup-title">DUELL SETUP</h1>
+      <p class="duel-step-label" id="duelStepLabel">Spieler 1: Name wählen</p>
+      <p class="duel-status" id="duelStatus">Bereit für ein lokales 1v1 mit KI-Chaos.</p>
+
+      <section id="duelNameStep" class="duel-step-panel">
+        <label for="duelNameInput" id="duelNameInputLabel">Name</label>
+        <input type="text" id="duelNameInput" maxlength="16" placeholder="Spielername" autocomplete="off">
+        <button class="btn btn-primary" id="duelNameNextBtn">Weiter</button>
+      </section>
+
+      <section id="duelLoadoutStep" class="duel-step-panel hidden">
+        <p class="duel-credits" id="duelCredits">Credits: 1000</p>
+        <div class="duel-loadout-grid">
+          <label for="duelChassisSelect">Chassis</label>
+          <select id="duelChassisSelect"></select>
+          <label for="duelWeaponSelect">Kanone</label>
+          <select id="duelWeaponSelect"></select>
+          <label for="duelArmorSelect">Rüstung</label>
+          <select id="duelArmorSelect"></select>
+        </div>
+        <button class="btn btn-primary" id="duelLoadoutConfirmBtn">Loadout bestätigen</button>
+      </section>
+
+      <section id="duelAiStep" class="duel-step-panel hidden">
+        <label for="duelAiCount">KI-Gegner (0–5)</label>
+        <select id="duelAiCount">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+        <button class="btn btn-primary" id="duelStartBtn">DUELL STARTEN</button>
+      </section>
     </div>
   </div>
 
@@ -172,9 +212,10 @@
   <div id="fightOverlay" class="fight-overlay hidden">
     <div class="fight-hud">
       <div class="fight-hud-left">
-        <span class="hud-label">DU</span>
+        <span class="hud-label" id="hudPlayerLabel">SPIELER 1</span>
         <div class="hud-hp-bar"><div class="hud-hp-fill player-hp" id="hudPlayerHp"></div></div>
         <span class="hud-hp-text" id="hudPlayerHpText">100/100</span>
+        <span class="hud-lives" id="hudPlayer1Lives">Leben: 3</span>
       </div>
       <div class="fight-hud-center">
         <span class="hud-esc">ESC = Zurück</span>
@@ -183,11 +224,12 @@
         <span class="hud-label enemy-label" id="hudEnemyLabel">GEGNER</span>
         <div class="hud-hp-bar"><div class="hud-hp-fill enemy-hp" id="hudEnemyHp"></div></div>
         <span class="hud-hp-text" id="hudEnemyHpText">100/100</span>
+        <span class="hud-lives" id="hudPlayer2Lives"></span>
       </div>
     </div>
     <canvas id="fightCanvas"></canvas>
     <div class="controls-hint fight-controls" id="fightControlsHint">
-      <p>↑↓←→ Bewegen · Leertaste Schießen · X Mine · Y Rakete · ESC Zurück</p>
+      <p id="fightControlsPrimary">↑↓←→ Bewegen · Leertaste Schießen · X Mine · Y Rakete · ESC Zurück</p>
       <p class="hud-ammo"><span id="hudMines">Minen: 10</span> · <span id="hudRockets">Raketen: 10</span></p>
     </div>
   </div>

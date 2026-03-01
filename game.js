@@ -110,6 +110,7 @@ const INITIAL_STATE = {
   score: 0,
   storyMode: false,
   storyChapter: 1,
+  gameMode: 'classic',
   playerMines: 10,
   playerRockets: 10,
 };
@@ -137,7 +138,30 @@ const state = Object.assign({}, INITIAL_STATE, {
   activeRobotIndex: 0,
   storyMode: false,
   storyChapter: 1,
+  gameMode: 'classic',
 });
+
+const DUEL_START_CREDITS = 1000;
+const DUEL_START_LIVES = 3;
+
+function createDefaultDuelPlayer(index) {
+  return {
+    name: `Spieler ${index}`,
+    lives: DUEL_START_LIVES,
+    loadout: { chassis: 'chassis_scout', weapon: 'weapon_cannon', armor: 'armor_light' },
+    creditsLeft: DUEL_START_CREDITS,
+    mines: 10,
+    rockets: 10,
+  };
+}
+
+const duelState = {
+  enabled: false,
+  step: 'name1',
+  aiCount: 0,
+  round: 1,
+  players: [createDefaultDuelPlayer(1), createDefaultDuelPlayer(2)],
+};
 
 function getWeaponShots(weaponId) {
   return Math.min(MAX_SHOTS_PER_GUN, Math.max(1, state.weaponShots?.[weaponId] ?? 1));
@@ -313,6 +337,19 @@ function computeRobotStats() {
 
   return {
     // Basiswert + Ausrüstung, damit Käufe die Werte wirklich erhöhen
+    hp: 200 + Math.max(0, sum('hp')),
+    armor: Math.max(0, sum('armor')),
+    damage: Math.max(5, sum('damage')),
+    speed: Math.max(1, sum('speed')),
+  };
+}
+
+function computeStatsFromEquipped(equipped) {
+  if (!equipped) return { hp: 200, armor: 50, damage: 20, speed: 8 };
+  const pick = (slot) => getPart(equipped[slot]);
+  const parts = [pick('chassis'), pick('weapon'), pick('armor')].filter(Boolean);
+  const sum = (key) => parts.reduce((acc, p) => acc + (p[key] || 0), 0);
+  return {
     hp: 200 + Math.max(0, sum('hp')),
     armor: Math.max(0, sum('armor')),
     damage: Math.max(5, sum('damage')),
@@ -899,6 +936,7 @@ let gameState = {
   fightEnded: false,
   winner: null,
   nextMeteorStormAt: 0,
+  duelRoundResolved: false,
 };
 
 function initCanvas() {
@@ -941,16 +979,46 @@ function updateHud() {
   const p = gameState.player;
   const ally = gameState.ally;
   const enemies = gameState.enemies;
+  const isDuel = state.gameMode === 'duel';
   if (p) {
     const bar = document.getElementById('hudPlayerHp');
     const text = document.getElementById('hudPlayerHpText');
     if (bar) bar.style.width = `${(Math.max(0, p.hp) / p.maxHp) * 100}%`;
     if (text) text.textContent = `${Math.max(0, Math.round(p.hp))} / ${p.maxHp}`;
   }
+  const leftLabel = document.getElementById('hudPlayerLabel');
+  const leftLives = document.getElementById('hudPlayer1Lives');
+  const rightLives = document.getElementById('hudPlayer2Lives');
+  if (leftLabel) leftLabel.textContent = isDuel ? (duelState.players[0]?.name || 'SPIELER 1') : 'DU';
+  if (leftLives) {
+    leftLives.textContent = isDuel ? `Leben: ${duelState.players[0]?.lives ?? 0}` : '';
+  }
+
   const mineEl = document.getElementById('hudMines');
   const rocketEl = document.getElementById('hudRockets');
-  if (mineEl) mineEl.textContent = `Minen: ${state.playerMines}`;
-  if (rocketEl) rocketEl.textContent = `Raketen: ${state.playerRockets}`;
+  if (mineEl) {
+    mineEl.textContent = isDuel
+      ? `P1 Minen: ${gameState.player?.mines ?? 0} · P2 Minen: ${gameState.ally?.mines ?? 0}`
+      : `Minen: ${state.playerMines}`;
+  }
+  if (rocketEl) {
+    rocketEl.textContent = isDuel
+      ? `P1 Raketen: ${gameState.player?.rockets ?? 0} · P2 Raketen: ${gameState.ally?.rockets ?? 0}`
+      : `Raketen: ${state.playerRockets}`;
+  }
+
+  if (isDuel && ally) {
+    const bar = document.getElementById('hudEnemyHp');
+    const text = document.getElementById('hudEnemyHpText');
+    const label = document.getElementById('hudEnemyLabel');
+    if (bar) bar.style.width = `${(Math.max(0, ally.hp) / ally.maxHp) * 100}%`;
+    if (text) text.textContent = `${Math.max(0, Math.round(ally.hp))} / ${ally.maxHp}`;
+    if (label) label.textContent = duelState.players[1]?.name || 'SPIELER 2';
+    if (rightLives) rightLives.textContent = `Leben: ${duelState.players[1]?.lives ?? 0}`;
+    return;
+  }
+
+  if (rightLives) rightLives.textContent = '';
   if (enemies.length > 0) {
     const totalHp = enemies.reduce((s, e) => s + Math.max(0, e.hp), 0);
     const totalMax = enemies.reduce((s, e) => s + e.maxHp, 0);
@@ -1394,6 +1462,136 @@ function updatePlayer() {
     });
     playRocketSound();
   }
+}
+
+function updateHumanControlledPlayer(actor, controls, ownerTag, color) {
+  if (gameState.countdown > 0 || gameState.fightEnded) return;
+  if (!actor || actor.hp <= 0) return;
+
+  const stats = actor.stats || { hp: 220, armor: 60, damage: 28, speed: 8 };
+  const maxSpeed = stats.speed * 0.18;
+  const acceleration = 0.08;
+  const friction = 0.97;
+  const rotSpeed = 0.045;
+
+  if (gameState.keys[controls.left]) actor.angle -= rotSpeed;
+  if (gameState.keys[controls.right]) actor.angle += rotSpeed;
+
+  if (actor.vx === undefined) actor.vx = 0;
+  if (actor.vy === undefined) actor.vy = 0;
+  if (actor.thrust === undefined) actor.thrust = 0;
+
+  let thrusting = false;
+  if (gameState.keys[controls.up]) {
+    actor.vx += Math.cos(actor.angle) * acceleration * maxSpeed;
+    actor.vy += Math.sin(actor.angle) * acceleration * maxSpeed;
+    thrusting = true;
+  }
+  if (gameState.keys[controls.down]) {
+    actor.vx -= Math.cos(actor.angle) * acceleration * maxSpeed * 0.5;
+    actor.vy -= Math.sin(actor.angle) * acceleration * maxSpeed * 0.5;
+    thrusting = true;
+  }
+
+  const speed = Math.sqrt(actor.vx * actor.vx + actor.vy * actor.vy);
+  if (speed > maxSpeed) {
+    actor.vx = (actor.vx / speed) * maxSpeed;
+    actor.vy = (actor.vy / speed) * maxSpeed;
+  }
+  actor.vx *= friction;
+  actor.vy *= friction;
+  const targetThrust = thrusting ? Math.min(speed / Math.max(maxSpeed, 0.1) + 0.3, 1.0) : 0;
+  actor.thrust += (targetThrust - actor.thrust) * 0.15;
+
+  actor.x += actor.vx;
+  actor.y += actor.vy;
+  if (actor.x < 0) actor.x += canvas.width;
+  if (actor.x > canvas.width) actor.x -= canvas.width;
+  if (actor.y < 0) actor.y += canvas.height;
+  if (actor.y > canvas.height) actor.y -= canvas.height;
+
+  for (let i = 0; i < gameState.obstacles.length; i++) {
+    const obs = gameState.obstacles[i];
+    if (circleRectCollision(actor.x, actor.y, 14, obs.x, obs.y, obs.w, obs.h)) {
+      resolveObstacleCollision(actor, 14, obs);
+    }
+  }
+
+  if (gameState.countdown === 0 && gameState.shield?.active) {
+    const sh = gameState.shield;
+    sh.x = canvas.width / 2;
+    sh.y = canvas.height / 2;
+    const dist = Math.hypot(actor.x - sh.x, actor.y - sh.y);
+    if (dist < sh.radius + 14) {
+      actor.shieldUntil = Date.now() + 10000;
+      gameState.shield.active = false;
+      spawnExplosion(sh.x, sh.y, '#44aaff', 15);
+    }
+  }
+
+  const now = Date.now();
+  if (gameState.keys[controls.shoot] && now - (actor.lastShot || 0) > 200) {
+    actor.lastShot = now;
+    const projSpeed = 4.4;
+    const weaponId = actor.loadout?.weapon || 'weapon_cannon';
+    gameState.projectiles.push({
+      x: actor.x + Math.cos(actor.angle) * 18,
+      y: actor.y + Math.sin(actor.angle) * 18,
+      vx: Math.cos(actor.angle) * projSpeed,
+      vy: Math.sin(actor.angle) * projSpeed,
+      damage: Math.max(10, Math.round(stats.damage)),
+      owner: ownerTag,
+      weaponId,
+      color,
+      totalDist: 0,
+    });
+    playShotSound();
+  }
+
+  if (gameState.keys[controls.mine] && (actor.mines || 0) > 0 && now - (actor.lastMinePlace || 0) > MINE_PLACE_COOLDOWN) {
+    actor.lastMinePlace = now;
+    actor.mines--;
+    gameState.mines.push({
+      x: actor.x + Math.cos(actor.angle) * 24,
+      y: actor.y + Math.sin(actor.angle) * 24,
+      owner: ownerTag,
+      placedAt: now,
+    });
+    playMineSound();
+  }
+
+  if (gameState.keys[controls.rocket] && (actor.rockets || 0) > 0 && now - (actor.lastRocketFire || 0) > ROCKET_FIRE_COOLDOWN) {
+    actor.lastRocketFire = now;
+    actor.rockets--;
+    const projSpeed = 3.2;
+    gameState.projectiles.push({
+      x: actor.x + Math.cos(actor.angle) * 18,
+      y: actor.y + Math.sin(actor.angle) * 18,
+      vx: Math.cos(actor.angle) * projSpeed,
+      vy: Math.sin(actor.angle) * projSpeed,
+      damage: ROCKET_DAMAGE,
+      owner: ownerTag,
+      type: 'rocket',
+      color,
+      totalDist: 0,
+    });
+    playRocketSound();
+  }
+}
+
+function updateDuelPlayers() {
+  updateHumanControlledPlayer(
+    gameState.player,
+    { left: 'a', right: 'd', up: 'w', down: 's', shoot: '1', mine: '2', rocket: '3' },
+    'player',
+    '#00d4aa'
+  );
+  updateHumanControlledPlayer(
+    gameState.ally,
+    { left: 'arrowleft', right: 'arrowright', up: 'arrowup', down: 'arrowdown', shoot: 'i', mine: 'o', rocket: 'p' },
+    'ally',
+    '#44aaff'
+  );
 }
 
 function updateAlly() {
@@ -1991,6 +2189,7 @@ function getAliveEnemiesCount() {
 }
 
 function hasLivingAlly() {
+  if (state.gameMode === 'duel') return !!(gameState.ally && gameState.ally.hp > 0);
   return state.arenaMode === '2v2' && gameState.ally && gameState.ally.hp > 0;
 }
 
@@ -2164,6 +2363,7 @@ function updateProjectiles() {
   const p = gameState.player;
   const ally = gameState.ally;
   const enemies = gameState.enemies;
+  const isDuel = state.gameMode === 'duel';
   
   // 1. Raketen: Homing (begrenzter Kurvenradius)
   const wrapDist = (ax, ay, bx, by) => {
@@ -2175,13 +2375,19 @@ function updateProjectiles() {
   gameState.projectiles.forEach((proj) => {
     if (proj.type === 'rocket') {
       let tx = 0, ty = 0;
-      if (proj.owner === 'player' && enemies?.length) {
+      if (proj.owner === 'player') {
         let best = Infinity;
-        enemies.forEach((e) => {
-          if (e.hp <= 0) return;
-          const { dist } = wrapDist(proj.x, proj.y, e.x, e.y);
-          if (dist < best) { best = dist; tx = e.x; ty = e.y; }
-        });
+        if (enemies?.length) {
+          enemies.forEach((e) => {
+            if (e.hp <= 0) return;
+            const { dist } = wrapDist(proj.x, proj.y, e.x, e.y);
+            if (dist < best) { best = dist; tx = e.x; ty = e.y; }
+          });
+        }
+        if (isDuel && ally && ally.hp > 0) {
+          const { dist } = wrapDist(proj.x, proj.y, ally.x, ally.y);
+          if (dist < best) { best = dist; tx = ally.x; ty = ally.y; }
+        }
         if (best < Infinity) {
           const { dx, dy, dist } = wrapDist(proj.x, proj.y, tx, ty);
           if (dist > 5) {
@@ -2196,8 +2402,42 @@ function updateProjectiles() {
             proj.vy = Math.sin(curAngle + clamped) * speed;
           }
         }
-      } else if (proj.owner === 'enemy' && p && p.hp > 0) {
-        const { dx, dy, dist } = wrapDist(proj.x, proj.y, p.x, p.y);
+      } else if (proj.owner === 'ally') {
+        let tx2 = 0, ty2 = 0;
+        let best2 = Infinity;
+        if (enemies?.length) {
+          enemies.forEach((e) => {
+            if (e.hp <= 0) return;
+            const { dist } = wrapDist(proj.x, proj.y, e.x, e.y);
+            if (dist < best2) { best2 = dist; tx2 = e.x; ty2 = e.y; }
+          });
+        }
+        if (isDuel && p && p.hp > 0) {
+          const { dist } = wrapDist(proj.x, proj.y, p.x, p.y);
+          if (dist < best2) { best2 = dist; tx2 = p.x; ty2 = p.y; }
+        }
+        if (best2 < Infinity) {
+          const { dx, dy, dist } = wrapDist(proj.x, proj.y, tx2, ty2);
+          if (dist > 5) {
+            const wantAngle = Math.atan2(dy, dx);
+            const curAngle = Math.atan2(proj.vy, proj.vx);
+            let diff = wantAngle - curAngle;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const clamped = Math.max(-ROCKET_TURN_RATE, Math.min(ROCKET_TURN_RATE, diff));
+            const speed = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy) || 3.2;
+            proj.vx = Math.cos(curAngle + clamped) * speed;
+            proj.vy = Math.sin(curAngle + clamped) * speed;
+          }
+        }
+      } else if (proj.owner === 'enemy' && ((p && p.hp > 0) || (ally && ally.hp > 0))) {
+        let target = p && p.hp > 0 ? p : ally;
+        if (isDuel && p && ally && p.hp > 0 && ally.hp > 0) {
+          const toP = wrapDist(proj.x, proj.y, p.x, p.y).dist;
+          const toA = wrapDist(proj.x, proj.y, ally.x, ally.y).dist;
+          target = toP <= toA ? p : ally;
+        }
+        const { dx, dy, dist } = wrapDist(proj.x, proj.y, target.x, target.y);
         if (dist > 5) {
           const wantAngle = Math.atan2(dy, dx);
           const curAngle = Math.atan2(proj.vy, proj.vx);
@@ -2268,6 +2508,38 @@ function updateProjectiles() {
         spawnExplosion(proj.x, proj.y, proj.color, 4);
         if ((proj.bounces || 0) > 6) return false;
         return true;
+      }
+    }
+
+    if (isDuel && proj.owner === 'player' && ally && ally.hp > 0) {
+      const dx = proj.x - ally.x;
+      const dy = proj.y - ally.y;
+      if (dx * dx + dy * dy < 225) {
+        if (proj.type === 'rocket') playRocketExplosionSound();
+        if (Date.now() < (ally.shieldUntil || 0)) {
+          spawnExplosion(proj.x, proj.y, '#44aaff', 8);
+          return false;
+        }
+        const dmg = Math.max(1, Math.floor(proj.damage - (ally.armor || 0) / 2));
+        ally.hp -= dmg;
+        spawnExplosion(proj.x, proj.y, '#ff4757', 12);
+        return false;
+      }
+    }
+    if (isDuel && proj.owner === 'ally' && p && p.hp > 0) {
+      const dx = proj.x - p.x;
+      const dy = proj.y - p.y;
+      if (dx * dx + dy * dy < 225) {
+        if (proj.type === 'rocket') playRocketExplosionSound();
+        if (Date.now() < (p.shieldUntil || 0)) {
+          spawnExplosion(proj.x, proj.y, '#44aaff', 8);
+          return false;
+        }
+        const pArmor = p.armor ?? stats.armor ?? 0;
+        const dmg = Math.max(1, Math.floor(proj.damage - pArmor / 2));
+        p.hp -= dmg;
+        spawnExplosion(proj.x, proj.y, '#ff4757', 12);
+        return false;
       }
     }
     
@@ -2345,7 +2617,7 @@ function updateProjectiles() {
             spawnExplosion(proj.x, proj.y, '#44aaff', 8);
             return false;
           }
-          const dmgMult = gameState.playerRobotIndex === 1 ? 1.44 : 1.2; // Zweiter Mech: 20% mehr als erster
+          const dmgMult = isDuel ? 1 : (gameState.playerRobotIndex === 1 ? 1.44 : 1.2); // Zweiter Mech nur im Classic
           const dmg = Math.max(1, Math.floor(proj.damage * dmgMult - e.armor / 2));
           e.hp -= dmg;
           if (e.hp <= 0) triggerEnemyDeathExplosion(e);
@@ -2408,19 +2680,30 @@ function render() {
   if (gameState.fightEnded && gameState.winner) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    const winnerColor = gameState.winner === 'player' ? (gameState.playerRobotIndex === 1 ? '#ff4757' : '#00d4aa') : '#ff4757';
-    const winnerText = gameState.winner === 'player' ? 'SIEG!' : 'NIEDERLAGE';
-    
+
+    const isDuel = state.gameMode === 'duel';
+    const winnerColor = gameState.winner === 'player'
+      ? '#00d4aa'
+      : gameState.winner === 'ally'
+        ? '#44aaff'
+        : '#ff4757';
+    const winnerText = isDuel
+      ? `${gameState.winner === 'player' ? (duelState.players[0]?.name || 'Spieler 1') : (duelState.players[1]?.name || 'Spieler 2')} gewinnt die Runde`
+      : (gameState.winner === 'player' ? 'SIEG!' : 'NIEDERLAGE');
+
     ctx.fillStyle = winnerColor;
-    ctx.font = 'bold 72px Orbitron';
+    ctx.font = isDuel ? 'bold 48px Orbitron' : 'bold 72px Orbitron';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(winnerText, canvas.width / 2, canvas.height / 2 - 30);
-    
+
     ctx.fillStyle = '#ffffff';
     ctx.font = '20px Rajdhani';
-    ctx.fillText(gameState.winner === 'player' ? 'Du hast gewonnen!' : 'Du wurdest besiegt!', canvas.width / 2, canvas.height / 2 + 50);
+    if (isDuel) {
+      ctx.fillText(`Runde ${duelState.round} · ${duelState.players[0]?.name || 'Spieler 1'} ${duelState.players[0]?.lives || 0} - ${duelState.players[1]?.lives || 0} ${duelState.players[1]?.name || 'Spieler 2'}`, canvas.width / 2, canvas.height / 2 + 50);
+    } else {
+      ctx.fillText(gameState.winner === 'player' ? 'Du hast gewonnen!' : 'Du wurdest besiegt!', canvas.width / 2, canvas.height / 2 + 50);
+    }
     return;
   }
   
@@ -2566,9 +2849,14 @@ function gameLoop() {
     }
   }
   
-  updatePlayer();
-  updateAlly();
-  updateEnemies();
+  if (state.gameMode === 'duel') {
+    updateDuelPlayers();
+    if (gameState.enemies.length > 0) updateEnemies();
+  } else {
+    updatePlayer();
+    updateAlly();
+    updateEnemies();
+  }
   
   if (!gameState.fightEnded && gameState.countdown === 0) {
     gameState.enemies.forEach((e) => {
@@ -2597,6 +2885,18 @@ function gameLoop() {
   updateMeteorStorms();
   updateProjectiles();
   updateParticles();
+
+  if (state.gameMode === 'duel' && !gameState.fightEnded) {
+    const p1Dead = !gameState.player || gameState.player.hp <= 0;
+    const p2Dead = !gameState.ally || gameState.ally.hp <= 0;
+    if (p1Dead || p2Dead) {
+      if (p1Dead && p2Dead) {
+        endDuelRound(Math.random() < 0.5 ? 'player' : 'ally');
+      } else {
+        endDuelRound(p1Dead ? 'player' : 'ally');
+      }
+    }
+  }
   
   // HP-Anzeigen (gedrosselt: nur alle 80ms für bessere Performance)
   const now = Date.now();
@@ -2633,6 +2933,7 @@ function updateEnemyHp(current, max) {
 }
 
 function endFight(won) {
+  if (state.gameMode === 'duel') return;
   if (gameState.fightEnded) return;
   gameState.fightEnded = true;
   gameState.winner = won ? 'player' : 'enemy';
@@ -2683,6 +2984,19 @@ function endFight(won) {
 }
 
 function handleKeyDown(e) {
+  if (state.gameMode === 'duel') {
+    const key = (e.key || '').toLowerCase();
+    const handled = ['w', 'a', 's', 'd', '1', '2', '3', 'i', 'o', 'p', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'escape'].includes(key);
+    if (handled) e.preventDefault();
+    if (key === 'escape') {
+      exitFight();
+      showDuelSetup('Duell pausiert. Setup erneut starten.');
+      return;
+    }
+    gameState.keys[key] = true;
+    return;
+  }
+
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
     e.preventDefault();
     gameState.keys[e.key] = true;
@@ -2706,6 +3020,12 @@ function handleKeyDown(e) {
 }
 
 function handleKeyUp(e) {
+  if (state.gameMode === 'duel') {
+    const key = (e.key || '').toLowerCase();
+    gameState.keys[key] = false;
+    return;
+  }
+
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
     gameState.keys[e.key] = false;
   }
@@ -2720,6 +3040,176 @@ function handleKeyUp(e) {
   }
 }
 
+function startDuelMatch() {
+  if (state.fightInProgress) return;
+  state.gameMode = 'duel';
+  duelState.enabled = true;
+  duelState.round = 1;
+  duelState.players.forEach((p) => {
+    p.lives = DUEL_START_LIVES;
+  });
+
+  const setupScreen = document.getElementById('duelSetupScreen');
+  if (setupScreen) setupScreen.classList.add('hidden');
+  showFightOverlay();
+  initCanvas();
+  playCombatMusic();
+  window.addEventListener('resize', resizeFightCanvas);
+  canvas?.focus();
+
+  const controlsText = document.getElementById('fightControlsPrimary');
+  if (controlsText) controlsText.textContent = 'P1: WASD + 1/2/3 · P2: Pfeile + I/O/P · ESC Zurück';
+
+  document.removeEventListener('keydown', handleKeyDown);
+  document.removeEventListener('keyup', handleKeyUp);
+  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('keyup', handleKeyUp);
+
+  startDuelRound();
+}
+
+function startDuelRound() {
+  if (!canvas) initCanvas();
+  state.fightInProgress = true;
+  gameState.fightEnded = false;
+  gameState.duelRoundResolved = false;
+  gameState.winner = null;
+  gameState.keys = {};
+  gameState.projectiles = [];
+  gameState.mines = [];
+  gameState.meteorWarnings = [];
+  gameState.particles = [];
+  gameState.nextMeteorStormAt = Date.now() + 5000;
+  gameState.countdown = 3;
+  gameState.countdownStartTime = Date.now();
+
+  const p1Stats = computeStatsFromEquipped(duelState.players[0].loadout);
+  const p2Stats = computeStatsFromEquipped(duelState.players[1].loadout);
+  duelState.players[0].mines = 10;
+  duelState.players[0].rockets = 10;
+  duelState.players[1].mines = 10;
+  duelState.players[1].rockets = 10;
+
+  gameState.playerStats = p1Stats;
+  gameState.player = {
+    x: canvas.width * 0.2,
+    y: canvas.height * 0.5,
+    angle: 0,
+    hp: p1Stats.hp,
+    maxHp: p1Stats.hp,
+    armor: p1Stats.armor,
+    damage: p1Stats.damage,
+    speed: p1Stats.speed,
+    stats: p1Stats,
+    loadout: duelState.players[0].loadout,
+    mines: duelState.players[0].mines,
+    rockets: duelState.players[0].rockets,
+    vx: 0,
+    vy: 0,
+    thrust: 0,
+    shieldUntil: 0,
+    lastShot: 0,
+    lastMinePlace: 0,
+    lastRocketFire: 0,
+  };
+  gameState.playerRobotIndex = 0;
+
+  gameState.ally = {
+    x: canvas.width * 0.8,
+    y: canvas.height * 0.5,
+    angle: Math.PI,
+    hp: p2Stats.hp,
+    maxHp: p2Stats.hp,
+    armor: p2Stats.armor,
+    damage: p2Stats.damage,
+    speed: p2Stats.speed,
+    stats: p2Stats,
+    loadout: duelState.players[1].loadout,
+    mines: duelState.players[1].mines,
+    rockets: duelState.players[1].rockets,
+    vx: 0,
+    vy: 0,
+    thrust: 0,
+    shieldUntil: 0,
+    lastShot: 0,
+    lastMinePlace: 0,
+    lastRocketFire: 0,
+  };
+
+  const aiCount = Math.max(0, Math.min(5, duelState.aiCount || 0));
+  const aiOpponents = generateOpponents().slice(0, aiCount);
+  state.currentEnemies = aiOpponents;
+  const aiSpawn = [
+    { x: 0.5, y: 0.2 },
+    { x: 0.5, y: 0.8 },
+    { x: 0.35, y: 0.35 },
+    { x: 0.65, y: 0.65 },
+    { x: 0.5, y: 0.5 },
+  ];
+  gameState.enemies = aiOpponents.map((opp, i) => ({
+    x: canvas.width * aiSpawn[i].x,
+    y: canvas.height * aiSpawn[i].y,
+    angle: Math.random() * Math.PI * 2,
+    hp: opp.hp,
+    maxHp: opp.hp,
+    armor: opp.armor,
+    damage: opp.damage,
+    speed: opp.speed,
+    reward: 0,
+    name: opp.name,
+    weaponId: opp.weaponId || 'weapon_cannon',
+    vx: 0,
+    vy: 0,
+    spriteIndex: Math.floor(Math.random() * 3),
+    lastShot: 0,
+    shieldUntil: 0,
+    retreatUntil: 0,
+    strategy: opp.strategy || 'aggressive',
+    shotCooldown: opp.shotCooldown ?? 500,
+    mines: 10,
+    rockets: 10,
+    lastMinePlace: 0,
+    lastRocketFire: 0,
+  }));
+
+  generateObstacles();
+  gameState.shield = { x: canvas.width / 2, y: canvas.height / 2, radius: 28, active: true };
+  updateHud();
+
+  if (!gameState.animationId) {
+    gameLoop();
+  }
+}
+
+function endDuelRound(loserOwner) {
+  if (gameState.duelRoundResolved) return;
+  gameState.duelRoundResolved = true;
+  gameState.fightEnded = true;
+
+  const loserIdx = loserOwner === 'ally' ? 1 : 0;
+  const winnerIdx = loserIdx === 0 ? 1 : 0;
+  duelState.players[loserIdx].lives = Math.max(0, duelState.players[loserIdx].lives - 1);
+  gameState.winner = winnerIdx === 0 ? 'player' : 'ally';
+  updateHud();
+
+  if (duelState.players[0].lives <= 0 || duelState.players[1].lives <= 0) {
+    setTimeout(() => endDuelMatch(winnerIdx), 2300);
+    return;
+  }
+
+  setTimeout(() => {
+    duelState.round += 1;
+    startDuelRound();
+  }, 2300);
+}
+
+function endDuelMatch(winnerIdx) {
+  const winnerName = duelState.players[winnerIdx]?.name || `Spieler ${winnerIdx + 1}`;
+  exitFight();
+  resetDuelState();
+  showDuelSetup(`Duell beendet. Sieger: ${winnerName}`);
+}
+
 function fight() {
   const is1v3 = state.arenaMode === '1v3';
   const is2v2 = state.arenaMode === '2v2';
@@ -2730,6 +3220,8 @@ function fight() {
   
   showFightOverlay();
   initCanvas();
+  const controlsText = document.getElementById('fightControlsPrimary');
+  if (controlsText) controlsText.textContent = '↑↓←→ Bewegen · Leertaste Schießen · X Mine · Y Rakete · ESC Zurück';
   
   state.fightInProgress = true;
   gameState.fightEnded = false;
@@ -2968,16 +3460,19 @@ function resetGame() {
   state.score = INITIAL_STATE.score;
   state.storyMode = false;
   state.storyChapter = 1;
+  state.gameMode = 'classic';
   state.playerMines = INITIAL_STATE.playerMines;
   state.playerRockets = INITIAL_STATE.playerRockets;
 
   const gameOverScreen = document.getElementById('gameOverScreen');
   const storyScreen = document.getElementById('storyChapterScreen');
   const happyScreen = document.getElementById('happyEndScreen');
+  const duelSetupScreen = document.getElementById('duelSetupScreen');
   const app = document.getElementById('app');
   if (gameOverScreen) gameOverScreen.classList.add('hidden');
   if (storyScreen) storyScreen.classList.add('hidden');
   if (happyScreen) happyScreen.classList.add('hidden');
+  if (duelSetupScreen) duelSetupScreen.classList.add('hidden');
   if (app) app.classList.remove('hidden');
 
   updateMoney();
@@ -3129,34 +3624,186 @@ function stopIntroSpeech() {
   if (currentMusic) currentMusic.volume = 0.3;
 }
 
+function getDuelSetupElements() {
+  return {
+    screen: document.getElementById('duelSetupScreen'),
+    stepLabel: document.getElementById('duelStepLabel'),
+    status: document.getElementById('duelStatus'),
+    nameStep: document.getElementById('duelNameStep'),
+    loadoutStep: document.getElementById('duelLoadoutStep'),
+    aiStep: document.getElementById('duelAiStep'),
+    nameInput: document.getElementById('duelNameInput'),
+    nameInputLabel: document.getElementById('duelNameInputLabel'),
+    credits: document.getElementById('duelCredits'),
+    chassisSelect: document.getElementById('duelChassisSelect'),
+    weaponSelect: document.getElementById('duelWeaponSelect'),
+    armorSelect: document.getElementById('duelArmorSelect'),
+    aiCount: document.getElementById('duelAiCount'),
+  };
+}
+
+function resetDuelState() {
+  duelState.enabled = true;
+  duelState.step = 'name1';
+  duelState.aiCount = 0;
+  duelState.round = 1;
+  duelState.players = [createDefaultDuelPlayer(1), createDefaultDuelPlayer(2)];
+}
+
+function getDuelLoadoutCost(loadout) {
+  if (!loadout) return 0;
+  return ['chassis', 'weapon', 'armor']
+    .map((slot) => getPart(loadout[slot]))
+    .filter(Boolean)
+    .reduce((sum, part) => sum + (part.price || 0), 0);
+}
+
+function getDuelStepPlayerIndex() {
+  if (duelState.step.endsWith('1')) return 0;
+  if (duelState.step.endsWith('2')) return 1;
+  return -1;
+}
+
+function renderDuelLoadoutOptions(playerIdx) {
+  const els = getDuelSetupElements();
+  if (!els.chassisSelect || !els.weaponSelect || !els.armorSelect) return;
+  const playerCfg = duelState.players[playerIdx];
+  const build = playerCfg.loadout;
+
+  const fillSelect = (selectEl, slot, currentValue) => {
+    const options = PARTS_CATALOG.filter((p) => p.slot === slot);
+    selectEl.innerHTML = options
+      .map((p) => `<option value="${p.id}"${p.id === currentValue ? ' selected' : ''}>${p.name} (${p.price}c)</option>`)
+      .join('');
+  };
+
+  fillSelect(els.chassisSelect, 'chassis', build.chassis);
+  fillSelect(els.weaponSelect, 'weapon', build.weapon);
+  fillSelect(els.armorSelect, 'armor', build.armor);
+
+  const refreshCredits = () => {
+    build.chassis = els.chassisSelect.value;
+    build.weapon = els.weaponSelect.value;
+    build.armor = els.armorSelect.value;
+    const cost = getDuelLoadoutCost(build);
+    const left = DUEL_START_CREDITS - cost;
+    playerCfg.creditsLeft = left;
+    if (els.credits) {
+      els.credits.textContent = `Credits: ${Math.max(0, left)} / ${DUEL_START_CREDITS}`;
+      els.credits.style.color = left < 0 ? 'var(--danger)' : 'var(--warning)';
+    }
+  };
+
+  els.chassisSelect.onchange = refreshCredits;
+  els.weaponSelect.onchange = refreshCredits;
+  els.armorSelect.onchange = refreshCredits;
+  refreshCredits();
+}
+
+function renderDuelSetupStep() {
+  const els = getDuelSetupElements();
+  if (!els.screen) return;
+  const step = duelState.step;
+  const pIdx = getDuelStepPlayerIndex();
+  const player = pIdx >= 0 ? duelState.players[pIdx] : null;
+  const isName = step.startsWith('name');
+  const isLoadout = step.startsWith('loadout');
+  const isAi = step === 'ai';
+
+  if (els.nameStep) els.nameStep.classList.toggle('hidden', !isName);
+  if (els.loadoutStep) els.loadoutStep.classList.toggle('hidden', !isLoadout);
+  if (els.aiStep) els.aiStep.classList.toggle('hidden', !isAi);
+
+  if (isName && player) {
+    if (els.stepLabel) els.stepLabel.textContent = `${player.name || `Spieler ${pIdx + 1}`}: Name wählen`;
+    if (els.nameInputLabel) els.nameInputLabel.textContent = `Name Spieler ${pIdx + 1}`;
+    if (els.nameInput) {
+      els.nameInput.value = player.name || '';
+      els.nameInput.focus();
+      els.nameInput.select();
+    }
+  } else if (isLoadout && player) {
+    if (els.stepLabel) els.stepLabel.textContent = `${player.name}: Roboter ausstatten`;
+    renderDuelLoadoutOptions(pIdx);
+  } else if (isAi) {
+    if (els.stepLabel) els.stepLabel.textContent = 'KI-Gegner wählen und Duell starten';
+    if (els.aiCount) els.aiCount.value = String(duelState.aiCount || 0);
+  }
+}
+
+function showDuelSetup(statusMsg = '') {
+  const introScreen = document.getElementById('introScreen');
+  const app = document.getElementById('app');
+  const els = getDuelSetupElements();
+  if (introScreen) introScreen.classList.add('hidden');
+  if (app) app.classList.add('hidden');
+  if (els.screen) els.screen.classList.remove('hidden');
+  if (els.status) els.status.textContent = statusMsg || 'Bereit für das nächste Duell.';
+  state.gameMode = 'duel';
+  renderDuelSetupStep();
+}
+
+function initDuelSetup() {
+  const els = getDuelSetupElements();
+  const nameBtn = document.getElementById('duelNameNextBtn');
+  const loadoutBtn = document.getElementById('duelLoadoutConfirmBtn');
+  const startBtn = document.getElementById('duelStartBtn');
+  if (!nameBtn || !loadoutBtn || !startBtn) return;
+  if (nameBtn.dataset.bound === '1') return;
+
+  const setStatus = (msg) => {
+    if (els.status) els.status.textContent = msg;
+  };
+
+  nameBtn.addEventListener('click', () => {
+    const pIdx = getDuelStepPlayerIndex();
+    if (pIdx < 0 || !duelState.step.startsWith('name')) return;
+    const raw = (els.nameInput?.value || '').trim();
+    duelState.players[pIdx].name = raw || `Spieler ${pIdx + 1}`;
+    duelState.step = pIdx === 0 ? 'loadout1' : 'loadout2';
+    setStatus(`${duelState.players[pIdx].name} bereit.`);
+    renderDuelSetupStep();
+  });
+
+  els.nameInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') nameBtn.click();
+  });
+
+  loadoutBtn.addEventListener('click', () => {
+    const pIdx = getDuelStepPlayerIndex();
+    if (pIdx < 0 || !duelState.step.startsWith('loadout')) return;
+    const build = duelState.players[pIdx].loadout;
+    const left = DUEL_START_CREDITS - getDuelLoadoutCost(build);
+    if (left < 0) {
+      setStatus('Zu teuer: Bitte ein günstigeres Loadout wählen.');
+      return;
+    }
+    duelState.players[pIdx].creditsLeft = left;
+    duelState.step = pIdx === 0 ? 'name2' : 'ai';
+    setStatus(`${duelState.players[pIdx].name} Loadout gespeichert.`);
+    renderDuelSetupStep();
+  });
+
+  startBtn.addEventListener('click', () => {
+    duelState.aiCount = Math.max(0, Math.min(5, parseInt(els.aiCount?.value || '0', 10) || 0));
+    startDuelMatch();
+  });
+
+  nameBtn.dataset.bound = '1';
+}
+
 function initIntro() {
   const introScreen = document.getElementById('introScreen');
-  const btnZurArena = document.getElementById('btnZurArena');
-  const btnStory = document.getElementById('btnStory');
-  const app = document.getElementById('app');
+  const btnDuel = document.getElementById('btnDuel');
   if (!introScreen) return;
 
-  if (btnZurArena) {
-    btnZurArena.addEventListener('click', () => {
-      stopIntroSpeech();
-      introScreen.classList.add('hidden');
-      app.classList.remove('hidden');
-      initGame();
-    });
-  }
-
-  if (btnStory) {
-    btnStory.addEventListener('click', () => {
-      stopIntroSpeech();
-      state.storyMode = true;
-      state.storyChapter = 1;
-      state.currentEnemies = STORY_CHAPTERS[0] ? [...STORY_CHAPTERS[0].opponents] : [];
-      introScreen.classList.add('hidden');
-      app.classList.remove('hidden');
-      initGame();
-      showStoryChapter(0);
-    });
-  }
+  initDuelSetup();
+  if (!btnDuel) return;
+  btnDuel.addEventListener('click', () => {
+    stopIntroSpeech();
+    resetDuelState();
+    showDuelSetup('Spieler 1 beginnt.');
+  });
 }
 
 function initGame() {
