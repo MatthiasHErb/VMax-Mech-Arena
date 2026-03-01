@@ -1835,6 +1835,42 @@ function resolveObstacleCollision(robot, radius, obs) {
   }
 }
 
+function bounceProjectileOnObstacle(proj, obs) {
+  const halfW = obs.w / 2;
+  const halfH = obs.h / 2;
+  const left = obs.x - halfW;
+  const right = obs.x + halfW;
+  const top = obs.y - halfH;
+  const bottom = obs.y + halfH;
+
+  const distLeft = Math.abs(proj.x - left);
+  const distRight = Math.abs(right - proj.x);
+  const distTop = Math.abs(proj.y - top);
+  const distBottom = Math.abs(bottom - proj.y);
+  const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+  const bounceLoss = 0.9;
+  const eps = 0.6;
+
+  if (minDist === distLeft) {
+    proj.x = left - eps;
+    proj.vx = -Math.abs(proj.vx) * bounceLoss;
+  } else if (minDist === distRight) {
+    proj.x = right + eps;
+    proj.vx = Math.abs(proj.vx) * bounceLoss;
+  } else if (minDist === distTop) {
+    proj.y = top - eps;
+    proj.vy = -Math.abs(proj.vy) * bounceLoss;
+  } else {
+    proj.y = bottom + eps;
+    proj.vy = Math.abs(proj.vy) * bounceLoss;
+  }
+
+  // Leichte Dämpfung verhindert Endlos-Pingpong in engen Gassen.
+  proj.vx *= 0.98;
+  proj.vy *= 0.98;
+  proj.bounces = (proj.bounces || 0) + 1;
+}
+
 function drawShieldRing(x, y, radius) {
   ctx.save();
   ctx.strokeStyle = 'rgba(68, 170, 255, 0.7)';
@@ -2182,6 +2218,8 @@ function updateProjectiles() {
   gameState.projectiles.forEach((proj) => {
     const dist = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy);
     proj.totalDist = (proj.totalDist || 0) + dist;
+    proj.prevX = proj.x;
+    proj.prevY = proj.y;
     proj.x += proj.vx;
     proj.y += proj.vy;
     if (proj.x < 0) proj.x += canvas.width;
@@ -2221,9 +2259,15 @@ function updateProjectiles() {
     for (let i = 0; i < gameState.obstacles.length; i++) {
       const obs = gameState.obstacles[i];
       if (pointInRect(proj.x, proj.y, obs.x, obs.y, obs.w, obs.h)) {
-        if (proj.type === 'rocket') playRocketExplosionSound();
-        spawnExplosion(proj.x, proj.y, proj.color, 10);
-        return false;
+        if (proj.type === 'rocket') {
+          playRocketExplosionSound();
+          spawnExplosion(proj.x, proj.y, proj.color, 10);
+          return false;
+        }
+        bounceProjectileOnObstacle(proj, obs);
+        spawnExplosion(proj.x, proj.y, proj.color, 4);
+        if ((proj.bounces || 0) > 6) return false;
+        return true;
       }
     }
     
