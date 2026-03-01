@@ -143,6 +143,8 @@ const state = Object.assign({}, INITIAL_STATE, {
 
 const DUEL_START_CREDITS = 1000;
 const DUEL_START_LIVES = 3;
+const DUEL_ROUND_RESULT_MS = 2300;
+const DUEL_FINAL_RESULT_MS = 4500;
 
 function createDefaultDuelPlayer(index) {
   return {
@@ -2690,8 +2692,14 @@ function render() {
       : gameState.winner === 'ally'
         ? '#44aaff'
         : '#ff4757';
+    const duelWinnerName = gameState.winner === 'player'
+      ? (duelState.players[0]?.name || 'Spieler 1')
+      : (duelState.players[1]?.name || 'Spieler 2');
+    const duelMatchOver = isDuel && (
+      (duelState.players[0]?.lives ?? 0) <= 0 || (duelState.players[1]?.lives ?? 0) <= 0
+    );
     const winnerText = isDuel
-      ? `${gameState.winner === 'player' ? (duelState.players[0]?.name || 'Spieler 1') : (duelState.players[1]?.name || 'Spieler 2')} gewinnt die Runde`
+      ? (duelMatchOver ? `${duelWinnerName} gewinnt!` : `${duelWinnerName} gewinnt die Runde`)
       : (gameState.winner === 'player' ? 'SIEG!' : 'NIEDERLAGE');
 
     ctx.fillStyle = winnerColor;
@@ -2703,7 +2711,10 @@ function render() {
     ctx.fillStyle = '#ffffff';
     ctx.font = '20px Rajdhani';
     if (isDuel) {
-      ctx.fillText(`Runde ${duelState.round} · ${duelState.players[0]?.name || 'Spieler 1'} ${duelState.players[0]?.lives || 0} - ${duelState.players[1]?.lives || 0} ${duelState.players[1]?.name || 'Spieler 2'}`, canvas.width / 2, canvas.height / 2 + 50);
+      const duelLine = duelMatchOver
+        ? `Endstand · ${duelState.players[0]?.name || 'Spieler 1'} ${duelState.players[0]?.lives || 0} - ${duelState.players[1]?.lives || 0} ${duelState.players[1]?.name || 'Spieler 2'}`
+        : `Runde ${duelState.round} · ${duelState.players[0]?.name || 'Spieler 1'} ${duelState.players[0]?.lives || 0} - ${duelState.players[1]?.lives || 0} ${duelState.players[1]?.name || 'Spieler 2'}`;
+      ctx.fillText(duelLine, canvas.width / 2, canvas.height / 2 + 50);
     } else {
       ctx.fillText(gameState.winner === 'player' ? 'Du hast gewonnen!' : 'Du wurdest besiegt!', canvas.width / 2, canvas.height / 2 + 50);
     }
@@ -3204,14 +3215,14 @@ function endDuelRound(loserOwner) {
   updateHud();
 
   if (duelState.players[0].lives <= 0 || duelState.players[1].lives <= 0) {
-    setTimeout(() => endDuelMatch(winnerIdx), 2300);
+    setTimeout(() => endDuelMatch(winnerIdx), DUEL_FINAL_RESULT_MS);
     return;
   }
 
   setTimeout(() => {
     duelState.round += 1;
     startDuelRound();
-  }, 2300);
+  }, DUEL_ROUND_RESULT_MS);
 }
 
 function endDuelMatch(winnerIdx) {
